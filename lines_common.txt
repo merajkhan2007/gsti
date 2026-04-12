@@ -1,0 +1,10 @@
+Line 356: if (it === 12 && window.location.href.indexOf("/auth") > 0) {
+Line 375: if (it === 5 && window.location.href.indexOf("/login") > 0) {
+Line 377: window.location.href = servers.GST_CONTENT_R1_URL;
+Line 379: if (it >= 15 && window.location.href.indexOf("/auth") > 0) {
+Line 422: if (window.location.href.indexOf("/auth") > 0) {
+Line 430: window.location.href = servers.GST_SERVICES_R1_URL + "/services/logout";
+Line 715: if (window.location.href.indexOf("/enrolplan") > 0) {
+Line 734: location.href= 'system/error';
+Line 738: location.href= 'system/error';
+Line 766: if(window.location.href.indexOf("/auth") < 0) {

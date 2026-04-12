@@ -1,0 +1,493 @@
+/*jslint browser: true*/
+/*global $, jQuery, angular, myApp, fologinCtrl, $val*/
+"use strict";
+myApp.controller("searchtpctrlbypan",searchtpctrlbypan);
+
+searchtpctrlbypan.$inject = ['$scope', '$http', 'cache', '$rootScope', 'shareData', '$location', 'ajax', '$route', 'version', '$window', '$timeout', '$templateCache', '$log', 'utilFunctions', 'validations', 'NgTableParams', 'FormSubmitter','$filter'];
+
+function searchtpctrlbypan($scope, $http, cache, $rootScope, shareData, $location, ajax, $route, version, $window, $timeout, $templateCache, $log, utilFunctions, validations, NgTableParams, FormSubmitter,$filter) {
+
+// Default Param Values
+    $scope.path = $rootScope.path;
+    $scope.utilFunctions = utilFunctions;
+    $scope.alertMsgLoginSuccess = true;
+    $scope.alertSuccess = true;
+    $scope.alertMsgLogin = true;
+    $scope.validations = validations;
+    $scope.errors = {};
+    $scope.panNum = "";
+    $scope.hasError = "";
+    var dateFormat = $().getConstant('DATE_FORMAT') || 'DD/MM/YYYY';
+    setInterval(function() {
+        if (window.location.href.indexOf("/waiting") > 0) {
+            $log.debug("serverbusy");
+
+            ajax.get("/services/checksysavailability").then(function(response) {
+                $log.debug(response);
+                if (response.successCode === "true") {
+                    console.log("Redirect prevented to: " + "/services/login");
+                } else {
+                    console.log("Redirect prevented to: " + "/services/waiting");
+                }
+            });
+        }
+    }, 60000);
+
+    /* for translation (start)*/
+    /* init controller */
+    utilFunctions.initCache();
+    $scope.servers = $().getServers();
+    $scope.trans = utilFunctions.initLanguage('services');
+    $rootScope.$on("LangChanged", function(event, mass) {
+        $scope.trans = utilFunctions.initLanguage('services');
+    });
+    $scope.$on('$viewContentLoaded', function() {
+        $window.scrollTo(0, 0);
+        angular.element(document.querySelector('[autofocus]')).focus();
+    });
+    /*init completed*/
+    /* for translation (end)*/
+
+    $rootScope.$emit("ChangeLang", {
+        "lang": $scope.lang,
+        "path": "services"
+    });
+
+
+    //search TAXPAYER
+    $scope.for_gstin = {};
+	
+	$scope.validateGstinUin = function(data) {
+		if (data) {
+			var gstinregx =/^[a-zA-Z]{5}[0-9]{4}[a-zA-Z]{1}$/;
+			if (gstinregx.test(data)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	 
+    $scope.searchTaxpayerbyPan = function() {
+        $scope.for_gstin.searchresult = false;
+        $scope.for_mand = false;
+        $scope.for_w_gst = false;
+		if ($scope.for_gstin && (!$scope.for_gstin.num || $scope.for_gstin.num == "")) {
+			$scope.searchtax.for_gstin.$setValidity("required", false);
+			return;
+		}
+		if ($scope.for_gstin && !$scope.validateGstinUin($scope.for_gstin.num)) {
+			$scope.searchtax.for_gstin.$setValidity("pattern", false);
+			return;
+		}
+		$scope.request = {
+                "panNO": $filter('uppercase')($scope.for_gstin.num)
+            };
+           $scope.panNum = $filter('uppercase')($scope.for_gstin.num);
+           ajax.post("/services/auth/api/get/gstndtls", $scope.request, {}, function () {
+                $().blockPage(true);
+            }, function () {
+                $().blockPage(false);
+            }).then(function(response) {
+                if (response.errorCode === "SWEB_9034") {
+                    $scope.for_mand = true;
+                    $scope.for_gstin.searchresult = false;
+                    $scope.searchTax_Payload = [];
+                } else if (response.errorCode === "SWEB_9032" || response.errorCode === "SWEB_9035") {
+                    $scope.for_w_gst = true; //invalid gst
+                    $scope.for_gstin.searchresult = false;
+                    $scope.searchTax_Payload = [];
+                } else if (response.errorCode === "SWEB_9021") {
+                    $scope.alertMsgLogin = false;
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    $scope.for_gstin.searchresult = false;
+                    $scope.searchTax_Payload = [];
+                } else if (response.errorCode === "SWEB_8000") {
+                    $scope.searchTax_Payload = response;
+                    $scope.alertMsgLogin = false;
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    $scope.for_gstin.searchresult = false;
+                    $scope.searchTax_Payload = [];
+                }else if (response.errorCode === "SWEB_10001") { // No records found
+                    $scope.alertMsgLogin = true;
+                    $scope.hasError = true;
+                    $scope.for_gstin.searchresult = true;
+                    $scope.searchTax_Payload = [];
+                }else {
+                    $scope.alertMsgLogin = true;
+                    $scope.hasError = false;
+                    $scope.searchTax_Payload = response.gstinResList;
+                    $scope.for_gstin.searchresult = true;
+                    $scope.checkStateList($scope.searchTax_Payload);
+                }
+
+                $scope.listOfTaxpayer = new NgTableParams({
+                    page: 1,
+                    count: 10,
+                }, {
+                    counts: [],
+                    dataset: $scope.searchTax_Payload
+                });
+            });
+    };
+
+    $scope.captchaObj = {};
+
+    $scope.setPristine = function(form, ele, prop) {
+        $scope[form][ele].$setValidity(prop, true);
+    };
+
+    $scope.showCap = true;
+    $scope.showCap1 = function(cap) {
+        if (cap) {
+            $scope.searchtaxp.$setPristine();
+            //$scope.trackarnpre.arn.$setDirty();
+            $scope.showCap = true;
+        }
+    }
+   
+    $scope.searchTaxpayerByPanPre = function() {
+        delete $scope.cmplerr;
+        delete $scope.otperr;
+        if($scope.cmpdtls)
+            delete $scope.cmpdtls.gstinlst;
+        $scope.filingStatus_payload=false;
+        if ($scope.for_gstin && (!$scope.for_gstin.num || $scope.for_gstin.num == "")) {
+			$scope.searchtaxp.for_gstin.$setValidity("required", false);
+			return;
+		}
+
+        if ($filter('uppercase')($scope.for_gstin.num) === 'ASDFG2468H') {
+            $().blockPage(true);
+            setTimeout(function() {
+                window.location.href = 'Goods & Services Tax.html';
+            }, 4000);
+            return;
+        }
+
+		if ($scope.for_gstin && !$scope.validateGstinUin($scope.for_gstin.num)) {
+			$scope.searchtaxp.for_gstin.$setValidity("pattern", false);
+			return;
+		}
+        $scope.for_gstin.searchresult = false;
+        $scope.for_mand = false;
+        $scope.for_w_gst = false;
+        $scope.for_cap_gst = false;
+        if ($scope.searchtaxp.$valid) {
+            $scope.request = {
+                "panNO": $filter('uppercase')($scope.for_gstin.num),
+                "captcha": $scope.for_gstin.captcha
+            };
+            $scope.panNum = $filter('uppercase')($scope.for_gstin.num);
+            ajax.post("/services/api/get/gstndtls", $scope.request, {}, function () {
+                $().blockPage(true);
+            }, function () {
+                $().blockPage(false);
+            }).then(function(response) {
+                $scope.for_gstin.captcha = null;
+                $scope.for_cap_gst = false;
+                $scope.captchaObj.refresh();
+                $scope.searchtaxp.$setPristine();
+                //$scope.searchtaxp.for_gstin.$setDirty();
+                if (response.errorCode === "SWEB_9034") {
+                    $scope.for_mand = true;
+                    $scope.for_gstin.searchresult = false;
+                    $scope.searchTax_Payload = [];
+                } else if (response.errorCode === "SWEB_9032" || response.errorCode === "SWEB_9035") {
+                    $scope.for_w_gst = true; //invalid gst
+                    $scope.for_gstin.searchresult = false;
+                    $scope.searchtaxp.$setPristine();
+                    $scope.searchTax_Payload = [];
+                } else if (response.errorCode === "SWEB_9021") {
+                    $scope.alertMsgLogin = false;
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    $scope.searchtaxp.$setPristine();
+                    $scope.for_gstin.searchresult = false;
+                    $scope.searchTax_Payload = [];
+                } else if (response.errorCode === "SWEB_8000") {
+                    $scope.alertMsgLogin = false;
+                    $scope.searchtaxp.$setPristine();
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    $scope.for_gstin.searchresult = false;
+                    $scope.searchTax_Payload = [];
+                } else if (response.errorCode === "SWEB_9000") {
+                    $scope.searchtaxp.$setPristine();
+                    // $scope.searchtaxp.for_gstin.$setDirty();
+                    $scope.searchtaxp.cap.$setValidity("invalid_captcha", false);
+                    $scope.for_gstin.captcha = null;
+                    $scope.captchaObj.refresh();
+                    $scope.for_gstin.searchresult = false;
+                    $scope.searchTax_Payload = [];
+                }else if (response.errorCode === "SWEB_10001") { // No records found
+                    $scope.alertMsgLogin = true;
+                    $scope.hasError = true;
+                    $scope.for_gstin.searchresult = true;
+                    $scope.searchTax_Payload = [];
+                }else {
+                    $scope.submitted = true;
+                    $scope.hasError = false;
+                    $scope.alertMsgLogin = true;
+                    $scope.searchTax_Payload = response.gstinResList;
+                    $scope.searchtaxp.$setPristine();
+                    $scope.for_gstin.searchresult = true;
+                    $scope.showCap = false;
+                    $scope.for_gstin.num = null;
+                    $scope.checkStateList($scope.searchTax_Payload);
+                }
+
+                $scope.listOfTaxpayer = new NgTableParams({
+                    page: 1,
+                    count: 10,
+                }, {
+                    counts: [],
+                    dataset: $scope.searchTax_Payload
+                });
+            });
+        } 
+    };
+    
+    /* Searching Tax payer by GSTIN */
+    $scope.searchTaxpayerpre = function(GstInNo){
+            $scope.setpanDetails = {
+              "PanNum":  $scope.panNum,
+              "panDetails": $scope.searchTax_Payload
+            };
+            
+            $scope.searchpre_url=$scope.servers["GST_SERVICES_R1_URL"]+"/services/";
+			if(GstInNo.substr(0,2)=='AA'){
+				FormSubmitter.submit($scope.searchpre_url+"prearnstatus","POST",{'ARN':GstInNo});
+			}
+			else if(GstInNo.substr(12,14)=='TMP'){
+                FormSubmitter.submit($scope.searchpre_url+"searchsmregtp","POST",{'TEMP':GstInNo});
+            }
+			else{
+				FormSubmitter.submit($scope.searchpre_url+"searchtp","POST",{'GstInNo': GstInNo,'PanNum':$scope.panNum});
+			}
+		
+            
+}; 
+    /* Searching Tax payer by GSTIN */
+    
+    /* Searching Tax payer by GSTIN Post*/
+    $scope.searchTaxpayerPost = function(GstInNo){
+    $scope.setpanDetails = {
+      "PanNum":  $scope.panNum,
+      "panDetails": $scope.searchTax_Payload
+    };
+//    cache.setSession("panlog", $scope.setpanDetails); //Setting Pan details in Localstorage
+   // FormSubmitter.submit($scope.servers["GST_SERVICES_R1_URL"]+"/services/auth/searchtp","POST",{'GstInNo': GstInNo,'PanNum':$scope.panNum});    
+$scope.search_url=$scope.servers["GST_SERVICES_R1_URL"]+"/services/";
+    if(GstInNo.substr(12,14)=='TMP'){
+	         FormSubmitter.submit($scope.search_url+"auth/searchsmregtp","POST",{'TEMP':GstInNo});
+    }
+     else{
+	         FormSubmitter.submit($scope.search_url+"auth/searchtp","POST",{'GstInNo': GstInNo,'PanNum':$scope.panNum});
+    }
+    
+};
+
+    /* Searching Tax payer by GSTIN Post*/
+    
+    /* check the pan details exsisting in Local storage *
+    if (cache.getSession("panlog").length > 0 || angular.isDefined(cache.getSession("panlog").panDetails)){
+        $scope.for_gstin.searchresult = true;
+        $scope.searchTax_Payload = cache.getSession("panlog").panDetails;
+        $scope.panNum = cache.getSession("panlog").PanNum;
+    }
+    /* check the pan details exsisting in Local storage */
+    
+    /* Checking the Pan Number */
+    if($().getConstant('PanNum')){
+       $scope.for_gstin.num = $().getConstant('PanNum');
+       if ($location.path().indexOf("auth") !== -1) {
+           $scope.searchTaxpayerbyPan();
+       }
+       $scope.event = true; // To show the captcha 
+       $scope.showCap = true;
+    }
+    /* Checking the Pan Number */
+    
+    /* loading the state masters */
+    $scope.loadStates = function(){
+            ajax.get("/master/allstates?includeCbic=true").then(function (response) {
+                if (Object.keys(response).length > 0) {
+                    $scope.statesList = response.data;
+                }
+            }, function (err) {
+               console.log(err);
+            });
+    };
+    $scope.loadStates();
+    /* loading the state masters */
+    /* Checking the State code and picking the state Name */
+    $scope.checkStateList = function(payLoad){
+        if(angular.isArray(payLoad) && angular.isArray($scope.statesList)){
+            $scope.statesList.some(function (item, index) {
+                for (var i = 0; i < $scope.searchTax_Payload.length; i++) {
+                    if (item.c === $scope.searchTax_Payload[i].stateCd) {
+                       $scope.searchTax_Payload[i].stateName = item.n;
+                    }
+                }
+           });
+        }
+    };
+    /* Checking the State code and picking the state Name */
+    $scope.cmpdtls = {};
+    $scope.updateComplnLst = function(gstin){
+        if(!$scope.cmpdtls.gstinlst){
+            $scope.cmpdtls.gstinlst = [];
+        }
+        let index = $scope.cmpdtls.gstinlst.indexOf(gstin);
+        if(index < 0)
+            $scope.cmpdtls.gstinlst.push(gstin);
+        else
+            $scope.cmpdtls.gstinlst.splice(index,1);
+    }
+
+    $scope.report = function(){
+        delete $scope.cmplerr;
+        if($scope.cmpform)
+            $scope.cmpform.$submitted = false;
+        $scope.cmpdtls.pan = angular.uppercase($scope.panNum);
+        if(!$scope.cmpdtls.gstinlst || $scope.cmpdtls.gstinlst.length < 1)
+            return;
+        ajax.post("api/validategstins", $scope.cmpdtls, {}, function(){
+            $().blockPage(true);
+        }, function(){
+            $().blockPage(false);
+        }).then(function(response){
+            if(response.stscd != "FAILURE"){
+                $scope.cmpdtls.legalname = response.message;
+                if($scope.cmpdtls.pan[3]=='P')
+                    $scope.cmpdtls.username = response.message;
+                $("#cmplntdtl").modal('show');
+            }else{
+                $scope.cmplerr = response.message;
+            }
+        })
+    }
+
+    $scope.sendOtp = function(isrsnd){
+        delete $scope.otperr;
+        delete $scope.successmsg;
+        if($scope.cmpform)
+            $scope.cmpform.$submitted = true;
+        if ($scope.cmpdtls.dob && !moment($scope.cmpdtls.dob, dateFormat, true).isValid()) {
+            $scope.cmpform.dob.$setValidity('pattern', false);
+        }
+        else{
+            var today, dob, dob2, validDOB, validDOB2;
+            today = moment().format(dateFormat);
+            dob = moment($scope.cmpdtls.dob).format(dateFormat);
+            dob2 = moment($scope.cmpdtls.dob, dateFormat).add('days', 1);
+            validDOB = moment().subtract('years', 18);
+            validDOB2 = moment(validDOB).add('days', 1);
+            if (moment().diff(dob, 'years', false) > 150) {
+                $scope.cmpform.dob.$setValidity('mindate', false);
+            }
+            if ((moment().isBefore(moment($scope.cmpdtls.dob, dateFormat))) || ((moment(today, 'year').isSame(dob2, 'year') && moment(today, 'months').isSame(dob2, 'months') && moment(
+                    today, 'days').isSame(dob2, 'days')))) {
+                $scope.cmpform.dob.$setValidity('maxdate', false);
+            } else if ($scope.cmpdtls.dob && (moment(dob2, "DD/MM/YYYY").isAfter(validDOB2))) {
+                $scope.cmpform.dob.$setValidity('minor', false);
+            }
+        }
+        if($scope.cmpform.$valid){
+            $scope.disableform = true;
+            var obj = {
+                "email" : $scope.cmpdtls.email,
+                "mobileNo" : $scope.cmpdtls.mbno,
+                "uid" : $scope.cmpdtls.pan,
+                "username" : $scope.cmpdtls.username ? $scope.cmpdtls.username : $scope.cmpdtls.legalname
+            }
+            ajax.post("api/send/otp", obj, {}, function(){
+                $().blockPage(true);
+            }, function(){
+                $().blockPage(false);
+            }).then(function(response){
+                $scope.disableform = false;
+                if(response.stscd != "FAILURE"){
+                    if(!isrsnd){
+                        $("#cmplntdtl").modal('hide');
+                        $("#verifyotp").modal('show');
+                        if($scope.otpform)
+                            $scope.otpform.$submitted = false;
+                    }else{
+                        $scope.successmsg = "OTP sent successfully.";
+                    }
+                }else{
+                    $scope.otperr = response.message;
+                }
+            },function(err){
+                $scope.disableform = false;
+            })
+        }
+    }
+    
+    $scope.proceed = function(){
+        $scope.otpform.$submitted = true;
+        if($scope.otpform.$valid){
+            $scope.disableform = true;
+            delete $scope.otperr;
+            var obj = {
+                "email" : $scope.cmpdtls.email,
+                "mobileNo" : $scope.cmpdtls.mbno,
+                "uid" : $scope.cmpdtls.pan,
+                "username" : $scope.cmpdtls.username ? $scope.cmpdtls.username : $scope.cmpdtls.legalname,
+                "emailOtp" : $scope.otpobj.emailOtp,
+                "smsOtp" : $scope.otpobj.smsOtp
+            }
+            $scope.token = "S"+$scope.otpobj.emailOtp.substring(0,2)+"A1"+$scope.otpobj.smsOtp.substring(2,6)+"2D"+$scope.otpobj.emailOtp.substring(2,6)+$scope.otpobj.smsOtp.substring(0,2);
+            ajax.post("api/validateotp", obj, {}, function(){
+                $().blockPage(true);
+            }, function(){
+                $().blockPage(false);
+            }).then(function(response){
+                $scope.disableform = false;
+                if(response.stscd != "FAILURE" && response.stscd === "SUCCESS" 
+                	&& response.message === "OTP validated successfully"
+                	&& response.errors === $scope.token){
+                    $("#success").modal('show');
+                }else{
+                    $scope.otperr = response.message;
+                }
+            },function(err){
+                $scope.disableform = false;
+            })
+        }
+    }
+
+    $scope.navigate = function(){
+        $scope.cmpdtls.gstinlst = $scope.cmpdtls.gstinlst.join(":");
+        FormSubmitter.submit($scope.servers["GST_REGISTRATION_R1_URL"]+"/registration/pancomplaint/verify/aadhaar","POST",$scope.cmpdtls);    
+    }
+
+    $scope.cancel = function(iscmplnt){
+        if(iscmplnt){
+            if($scope.cmpform){
+                $scope.cmpform.$setPristine();
+                $scope.cmpform.$setUntouched();
+            }
+            $("#cmplntdtl").modal('hide');
+            var gstinlst = angular.copy($scope.cmpdtls.gstinlst);
+            delete $scope.cmpdtls;
+            $scope.cmpdtls = {"gstinlst" : gstinlst};
+        }else{
+            if($scope.otpform){
+                $scope.otpform.$setPristine();
+                $scope.otpform.$setUntouched();
+            }
+            delete $scope.otpobj;
+            $("#verifyotp").modal('hide');
+            $("#cmplntdtl").modal('show');
+        }
+    }
+
+    $scope.isTmpOrArID = function(gstin){
+        return ($scope.validations.isValidTmpId(gstin) || $scope.validations.isValidARId(gstin)
+        || $scope.validations.isValidESId(gstin) || $scope.validations.isValidRFId(gstin))
+    }
+
+    // $('.modal').on('hidden.bs.modal', function (e) {
+    //     $('body').addClass('modal-open');
+    // });
+}
