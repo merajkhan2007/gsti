@@ -1,0 +1,1377 @@
+/*jslint browser: true*/
+/*global $, jQuery, angular, myApp, fologinCtrl, $val*/
+"use strict";
+myApp.controller("searchtpctrl", searchtpctrl);
+
+
+
+searchtpctrl.$inject = ['$scope', '$http', 'cache', '$rootScope', 'shareData', '$location', 'ajax', '$route', 'version', '$window', '$timeout', '$templateCache', '$log', 'utilFunctions', 'validations', 'NgTableParams', 'FormSubmitter'];
+
+
+function searchtpctrl($scope, $http, cache, $rootScope, shareData, $location, ajax, $route, version, $window, $timeout, $templateCache, $log, utilFunctions, validations, NgTableParams, FormSubmitter) {
+
+	//clearing params from url in searchtp
+	if(Object.keys($location.search()).length){
+		window.location.href="/error/notfound";		
+	}
+    $scope.path = $rootScope.path;
+    
+    // $scope.cookieEnabled = cookieEnabled;
+
+    $scope.utilFunctions = utilFunctions;
+    $scope.consent = true;
+    $scope.alertMsgLoginSuccess = true;
+    $scope.validations = validations;
+
+    $scope.alertSuccess = true;
+    $scope.alertMsgLogin = true;
+    $scope.forgotUsername = true;
+    $scope.forgtuser = true;
+    $scope.data = {};
+    $scope.forgotSucc = false;
+    $scope.oneClick = false;
+    $scope.forgotUsername = true;
+    $scope.forgotpasswor = true;
+    $scope.Userdet = true;
+    $scope.UserPwd = true;
+    $scope.validations = validations;
+    //to generate otp
+    $scope.GenOtp = false;
+    $scope.ques = false;
+    $scope.Security = false;
+    $scope.frtusername = true;
+    $scope.frtpass = true;
+    $scope.login = true;
+    $scope.errors = {};
+    $scope.pro = function() {
+        $scope.ques = true;
+    };
+    $scope.keywords="Jurisdictional Office";
+    setInterval(function() {
+
+        if (window.location.href.indexOf("/waiting") > 0) {
+            $log.debug("serverbusy");
+
+            ajax.get("/services/checksysavailability").then(function(response) {
+                $log.debug(response);
+                if (response.successCode === "true") {
+                    window.location.href = "/services/login";
+                } else {
+                    window.location.href = "/services/waiting";
+                }
+            });
+        }
+    }, 60000);
+
+    $scope.$on('$viewContentLoaded', function() {
+        $window.scrollTo(0, 0);
+        // angular.element(document.querySelector('[autofocus]')).focus();
+    });
+
+    /* for translation (start)*/
+
+    /* init controller */
+    utilFunctions.initCache();
+    $scope.servers = $().getServers();
+    $scope.trans = utilFunctions.initLanguage('services');
+    $rootScope.$on("LangChanged", function(event, mass) {
+        $scope.trans = utilFunctions.initLanguage('services');
+    });
+    $scope.$on('$viewContentLoaded', function() {
+        $window.scrollTo(0, 0);
+        angular.element(document.querySelector('[autofocus]')).focus();
+    });
+    /*init completed*/
+
+    /* for translation (end)*/
+
+    $rootScope.$emit("ChangeLang", {
+        "lang": $scope.lang,
+        "path": "services"
+    });
+
+
+
+    $scope.lodate = new Date();
+
+    //for checking server availability
+    $scope.consent = function() {
+
+
+
+        $scope.lodate = new Date();
+        ajax.get("/services/checksysavailability").then(function(response) {
+            $log.debug(response);
+            if (response.successCode === "true") {
+
+                window.location.href = "/services/newlogin";
+
+            } else if (response.errorCode === "false") {
+                window.location.href = "/services/waiting";
+            };
+        });
+
+
+
+
+    }
+
+	if (cache.get("corbustype").length > 0) {
+        shareData.corevalue = cache.get("corbustype");
+    } else {
+        ajax.get("/pages/services/data/corbustype.json").then(function (resp) {
+            shareData.corevalue = resp.data;
+            cache.set("corbustype", resp.data);
+        }, function (err) {
+            $scope.errors['corbustype'] = err.msg;
+        });
+	}
+
+    //Track ARN
+
+    //search TAXPAYER
+    /*arabinda*/
+    $scope.for_gstin = {};
+    $scope.showBckBtn = false;
+    //$rootScope.Modaldata = {};
+    /**
+     *  @author:    Arabinda Mishra
+     *  @created:   Sep-Nov 2016
+     *  @description: Serach TaxPayer Postlogin case for MVP 2(FO) for handling modals in controller injected $modal.
+     *  @copyright: (c) Copyright by Infosys technologies
+     **/
+    /* $scope.showModal = false;
+     $scope.open1 = function (modalData) {
+         if (modalData === $scope.searchTax_Payload.members) {
+
+             $scope.showModal = !$scope.showModal;
+             $scope.Modaldata = $scope.searchTax_Payload.members;
+             $scope.nameModal = "Promoters";
+
+         } else {
+
+             $scope.showModal = !$scope.showModal;
+             $scope.Modaldata = $scope.naturedata;
+             $scope.nameModal = "Nature";
+         }
+
+
+     };*/
+    /**
+     *  @author:    Arabinda Mishra
+     *  @created:   Sep-Nov 2016
+     *  @description: Serach TaxPayer Postlogin case for MVP 2(FO) implementation of server side pagination injected NgTable and                           $resource.
+     *  @copyright: (c) Copyright by Infosys technologies
+     **/
+
+
+    $scope.busplaceaddr = {};
+    $scope.searchTaxpayertable = function(gstnnum) {
+
+        $scope.for_gstin.num = gstnnum;
+
+        $scope.request = {
+
+            "gstin": $scope.for_gstin.num
+        };
+        var config = {headers: {
+            'Accept': 'application/json, text/plain',
+			'Accept-Language': 'en-US,en;q=0.9',
+			'Content-Type': 'application/json;charset=UTF-8'
+        }
+        }
+        ajax.post($scope.servers["GST_PUBLICSERVICES_R1_URL"]+"/auth/api/search/tp/busplaces", $scope.request,config.headers).then(function(response) { 
+
+            $scope.busplaceaddr = response;
+
+            if (response.errorCode === "SWEB_8000") {
+               
+                    $scope.alertMsgLogin = false;
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    $scope.for_gstin.searchresult = false;
+
+            } 
+            else if(response.errorCode === "SWEB_9035"){
+                  $scope.for_w_gst = true; //invalid gst
+                    $scope.for_gstin.searchresult = false;
+            }
+            else {
+			    if($scope.busplaceaddr.pradr!='NA'){
+                $scope.busplaceaddr.pradr.type = 'p';
+				$scope.busplaceaddr.adadr.splice(0, 0, $scope.busplaceaddr.pradr);
+				}
+				if ($scope.busplaceaddr && $scope.busplaceaddr.adadr && $scope.busplaceaddr.adadr != null && $scope.busplaceaddr.adadr != 'NA' ) {
+					$scope.busiTable = new NgTableParams({
+						page: 1,
+						count: 10,
+
+					}, {
+						counts: [],
+						dataset: $scope.busplaceaddr.adadr
+
+					});
+				}
+            }
+
+        });
+        // var Api = $resource("/services/auth/search/tp/busPlaces?gstin=" + $scope.for_gstin.num); ///services/auth1/search/tp/busPlaces
+
+
+    };
+
+
+
+    /**
+     *  @author:    Arabinda Mishra
+     *  @created:   Sep-Nov 2016
+     *  @description: Serach TaxPayer Postlogin case for MVP 2(FO) main.
+     *  @copyright: (c) Copyright by Infosys technologies
+     **/
+    $scope.naturedata = [];
+    $scope.nba1 = false;
+    $scope.mbr = false;
+    
+    $scope.ctjPattern=false;
+    $scope.stjPattern=false;     
+	
+	
+	$scope.validateGstinUin = function(data) {
+		if (data) {
+			var gstinregx =/[0-9]{2}[a-zA-Z]{5}[0-9]{4}[a-zA-Z]{1}[1-9A-Za-z]{1}[Zz1-9A-Ja-j]{1}[0-9a-zA-Z]{1}/, uinregx = /[0-9]{4}[A-Z]{3}[0-9]{5}[UO]{1}[N][A-Z0-9]{1}/, nrid =/[0-9]{4}[a-zA-Z]{3}[0-9]{5}[N][R][0-9a-zA-Z]{1}/,oidar_reg_ex = /[9][9][0-9]{2}[a-zA-Z]{3}[0-9]{5}[O][S][0-9a-zA-Z]{1}/, tdsregx = /[0-9]{2}[a-zA-Z]{4}[a-zA-Z0-9]{1}[0-9]{4}[a-zA-Z]{1}[1-9A-Za-z]{1}[D]{1}[0-9a-zA-Z]{1}/, tcsregx = /[0-9]{2}[a-zA-Z]{5}[0-9]{4}[a-zA-Z]{1}[1-9A-Za-z]{1}[C]{1}[0-9a-zA-Z]{1}/, aridregx= /[0-9]{12}[A][R][0-9a-zA-Z]{1}/,
+			rfidregx= /[0-9]{12}[R][F][0-9a-zA-Z]{1}/,esidregx= /[0-9]{12}[E][S][0-9a-zA-Z]{1}/;
+			if (gstinregx.test(data) || uinregx.test(data) || nrid.test(data) || oidar_reg_ex.test(data) || tcsregx.test(data) ||tdsregx.test(data) ||aridregx.test(data) || rfidregx.test(data) || esidregx.test(data)) {
+				return true;
+			}
+		}
+		return false;
+	} 
+	 
+    $scope.searchTaxpayer = function() {
+        $('.nav-tabs a[href="#partners"]').tab('show'); 
+        if($scope.ewaybill_show || $scope.showfiling_show) {
+            return;
+        }
+		if ($scope.for_gstin && (!$scope.for_gstin.num || $scope.for_gstin.num == "")) {
+			$scope.searchtax.for_gstin.$setValidity("required", false);
+			return;
+		}
+		if ($scope.for_gstin && !$scope.validateGstinUin($scope.for_gstin.num)) {
+			$scope.searchtax.for_gstin.$setValidity("pattern", false);
+			return;
+        }
+		$scope.showFinYearDropdown = false;
+		$scope.errorMessage = false;
+        $scope.for_gstin.searchresult = false;
+        $scope.for_mand = false;
+        $scope.for_w_gst = false;
+        $scope.nba1 = false;
+        $scope.mbr = false;
+        $scope.noRecord = false;
+        $scope.noLiabilityRecord = false;
+        $scope.ewayData = false;
+        $scope.fileData = false;
+        $scope.liabilityData = false;
+        $scope.ewayStatus_payload= false;
+        $scope.filingStatus_payload=false;
+        $scope.liabilityStatus_payload=false;
+        //CR 20474 Part B changes
+        $scope.profileData = false; 
+        $scope.initial = true;
+        $scope.userProfileDetails = false;
+        //CR 20474 Part B changes
+        $scope.taxpayerType = undefined;
+		$scope.request = {
+
+                "gstin": $scope.for_gstin.num
+            };
+        var config = {headers: {
+            'Accept': 'application/json, text/plain',
+			'Accept-Language': 'en-US,en;q=0.9',
+			'Content-Type': 'application/json;charset=UTF-8'
+        }
+        }
+		
+        ajax.post($scope.servers["GST_PUBLICSERVICES_R1_URL"]+"/auth/api/search/tp", $scope.request,config.headers).then(function(response) { 
+                if (response.errorCode === "SWEB_9034") {
+                    $scope.for_mand = true;
+                    $scope.for_gstin.searchresult = false;
+                } else if (response.errorCode === "SWEB_9032" || response.errorCode === "SWEB_9035") {
+                    $scope.for_w_gst = true; //invalid gst
+                    $scope.for_gstin.searchresult = false;
+                } else if (response.errorCode === "SWEB_9021") {
+
+                    $scope.alertMsgLogin = false;
+
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    $scope.for_gstin.searchresult = false;
+                } else if (response.errorCode === "SWEB_8000") {
+
+                    $scope.searchTax_Payload = response;
+                    $scope.alertMsgLogin = false;
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+
+                    $scope.for_gstin.searchresult = false;
+                } else {
+                   if(response.nba === 'NA' || !response.nba){
+                        $scope.nba1 = true;
+                    }
+                    else {
+                        response.nba = _.without(response.nba, null);
+                    }
+                    if(response.mbr === 'NA' || !response.mbr){
+                        $scope.mbr = true;
+                    }
+                    $scope.alertMsgLogin = true;
+                    $scope.searchTax_Payload = response;
+					$scope.trdgstin = $scope.searchTax_Payload.gstin;
+                    //CR 20474  Part B changes
+                     $scope.userType = ((response && response.dty) ? response.dty : "");
+                     $scope.userGstin = ((response && response.gstin) ? response.gstin : "");
+                    //CR 20474  Part B changes end
+                    //CR18285
+                    if($scope.searchTax_Payload.ntcrbs)
+                        getNtrCoreBusDes($scope.searchTax_Payload.ntcrbs);
+                    var tprTy = ((response && response.dty) ? response.dty : "");
+                    var gSts = ((response && response.sts) ? response.sts : "");
+                    $scope.isCxSts = (/(^Cancelled$|^Cancelled due to expiry of registration period$|^Cancelled suo-moto$|^Cancelled on application of Taxpayer$|^Inactive$|^Suspended$|^Cancelled on Request of Taxpayer$)/g).test(gSts);
+                    $scope.hasCompRating = false; //CR19011 need to hide compliance rating to All taxpayer.
+                    $scope.hasAdhr = !(/(^United Nation Body$|^Consulate or Embassy of Foreign Country$|^Other Notified Persons$|^Tax Deductor$|^Tax Collector \(Electronic Commerce Operator\)$|^Non Resident Online Services Provider$)/g).test(tprTy);
+                    $scope.hasEkyc = !(/(^United Nation Body$|^Consulate or Embassy of Foreign Country$|^Other Notified Persons$|^Tax Deductor$|^Tax Collector \(Electronic Commerce Operator\)$|^Non Resident Online Services Provider$)/g).test(tprTy);
+                    //Masked the Aggregate turnover, Gross Taxable Income, % of Tax Payment in Cash fields for following Taxpayer for CR-19011.
+                    $scope.hasATO = !(/(^Non Resident Online Services Provider$|^Tax Deductor$|^Input Service Distributor \(ISD\)$|^United Nation Body$|^Consulate or Embassy of Foreign Country$|^Other Notified Persons$)/g).test(tprTy);
+                    $scope.hasGTI = !(/(^Non Resident Online Services Provider$|^Tax Deductor$|^Input Service Distributor \(ISD\)$|^United Nation Body$|^Consulate or Embassy of Foreign Country$|^Other Notified Persons$)/g).test(tprTy);
+                    $scope.hasTPC = !(/(^Non Resident Online Services Provider$|^Tax Deductor$|^Input Service Distributor \(ISD\)$|^United Nation Body$|^Consulate or Embassy of Foreign Country$|^Other Notified Persons$)/g).test(tprTy);
+                    $scope.ctjPattern=false;
+                    $scope.stjPattern=false;
+                    $scope.tradeNameFlag=false;
+                    var gstinregxp =/[0-9]{2}[a-zA-Z]{5}[0-9]{4}[a-zA-Z]{1}[1-9A-Za-z]{1}[Zz1-9A-Ja-j]{1}[0-9a-zA-Z]{1}/;
+                    var tdsregxp = /[0-9]{2}[a-zA-Z]{4}[a-zA-Z0-9]{1}[0-9]{4}[a-zA-Z]{1}[1-9A-Za-z]{1}[D]{1}[0-9a-zA-Z]{1}/;
+                    var tcsregxp = /[0-9]{2}[a-zA-Z]{5}[0-9]{4}[a-zA-Z]{1}[1-9A-Za-z]{1}[C]{1}[0-9a-zA-Z]{1}/;
+                    if(gstinregxp.test($scope.for_gstin.num) || tdsregxp.test($scope.for_gstin.num) || tcsregxp.test($scope.for_gstin.num)){
+                    	$scope.tradeNameFlag=true;
+                    }
+                    var goodServiveURL_post = $scope.servers["GST_PUBLICSERVICES_R1_URL"]+"/auth/api/search/goodservice?gstin="+$scope.for_gstin.num;
+                    getGoodsServices_value(goodServiveURL_post);
+
+            		if(response.ctj){
+            			$scope.ctjPattern=true;
+                        var splitCTJVal = commonJurisdiction_split(response.ctj);
+                        splitCTJVal.unshift("(JURISDICTION - CENTER)");
+                        if((response.ctj).indexOf('Jurisdictional Office')>0){
+                            response.admOfc= splitCTJVal;
+            		}
+                    else {
+                            response.othrOfc = splitCTJVal;
+                        }
+                    }
+            		if(response.stj){
+            			$scope.stjPattern=true;
+                        var splitSTJVal = commonJurisdiction_split(response.stj);
+                        splitSTJVal.unshift("(JURISDICTION - STATE)");
+                        if((response.stj).indexOf('Jurisdictional Office')>0){
+                            response.admOfc= splitSTJVal ;
+            		}
+                    else {
+                            response.othrOfc = splitSTJVal;
+                        }
+                    }
+                    $scope.for_gstin.searchresult = true;
+                    checkTaxpayerInfo(response.dty);
+                    getComplianceRatingInfo();
+                }
+            });
+    };
+
+
+    /**
+     *  @author:    Arabinda Mishra
+     *  @created:   Sep-Nov 2016
+     *  @description: Serach TaxPayer Prelogin case for MVP 2(FO).
+     *  @copyright: (c) Copyright by Infosys technologies
+     **/
+
+
+    $scope.captchaObj = {
+
+    };
+
+
+    $scope.setPristine = function(form, ele, prop) {
+        $scope[form][ele].$setValidity(prop, true);
+    };
+
+    $scope.showCap = true;
+    $scope.showCap1 = function(cap) {
+        if (cap) {
+
+            $scope.searchtaxp.$setPristine();
+            //$scope.trackarnpre.arn.$setDirty();
+            $scope.showCap = true;
+        }
+    }
+    $scope.nba = false;
+    $scope.ewayStatus_payload = false;
+   
+    $scope.searchTaxpayerpre = function() {
+        $scope.filingStatus_payload=false;
+		$scope.errorMessage = false;
+		
+        if ($scope.for_gstin && (!$scope.for_gstin.num || $scope.for_gstin.num == "")) {
+			$scope.searchtaxp.for_gstin.$setValidity("required", false);
+			return;
+		}
+		if ($scope.for_gstin && !$scope.validateGstinUin($scope.for_gstin.num)) {
+			$scope.searchtaxp.for_gstin.$setValidity("pattern", false);
+			return;
+		}
+		$scope.showFinYearDropdown = false;
+        $scope.for_gstin.searchresult = false;
+        $scope.for_mand = false;
+        $scope.for_w_gst = false;
+        $scope.for_cap_gst = false;
+
+        if ($scope.searchtaxp.$valid) {
+
+            $scope.request = {
+
+                "gstin": $scope.for_gstin.num,
+                "captcha": $scope.for_gstin.captcha
+            };
+
+            ajax.post("/services/api/search/tp", $scope.request).then(function(response) {
+                $scope.for_gstin.captcha = null;
+                $scope.for_cap_gst = false;
+                $scope.captchaObj.refresh();
+                $scope.searchtaxp.$setPristine();
+                //$scope.searchtaxp.for_gstin.$setDirty();
+                if (response.errorCode === "SWEB_9034") {
+                    $scope.for_mand = true;
+                    $scope.for_gstin.searchresult = false;
+                } else if (response.errorCode === "SWEB_9032" || response.errorCode === "SWEB_9035") {
+                    $scope.for_w_gst = true; //invalid gst
+                    $scope.for_gstin.searchresult = false;
+                    $scope.searchtaxp.$setPristine();
+                } else if (response.errorCode === "SWEB_9021") {
+
+                    $scope.alertMsgLogin = false;
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    $scope.searchtaxp.$setPristine();
+
+                    $scope.for_gstin.searchresult = false;
+                } else if (response.errorCode === "SWEB_8000") {
+
+                    $scope.alertMsgLogin = false;
+                    $scope.searchtaxp.$setPristine();
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    $scope.for_gstin.searchresult = false;
+                } else if (response.errorCode === "SWEB_9000") {
+
+                    $scope.searchtaxp.$setPristine();
+                    // $scope.searchtaxp.for_gstin.$setDirty();
+                    $scope.searchtaxp.cap.$setValidity("invalid_captcha", false);
+                    $scope.for_gstin.captcha = null;
+                    $scope.captchaObj.refresh();
+                    $scope.for_gstin.searchresult = false;
+                } else {
+                    
+                    if(response.nba === 'NA'){
+                        $scope.nba = 'true';
+                    }
+                 
+                    $scope.submitted = true;
+                    $scope.alertMsgLogin = true;
+                    $scope.searchTaxpre_Payload = response;
+                    var tprTy = ((response && response.dty) ? response.dty : "");
+                    var gSts = ((response && response.sts) ? response.sts : "");
+                    $scope.isCxSts = (/(^Cancelled$|^Cancelled due to expiry of registration period$|^Cancelled suo-moto$|^Cancelled on application of Taxpayer$|^Inactive$|^Suspended$|^Cancelled on Request of Taxpayer$)/g).test(gSts);
+                    $scope.hasAdhr = !(/(^United Nation Body$|^Consulate or Embassy of Foreign Country$|^Other Notified Persons$|^Tax Deductor$|^Tax Collector \(Electronic Commerce Operator\)$|^Non Resident Online Services Provider$)/g).test(tprTy);
+                    $scope.hasEkyc = !(/(^United Nation Body$|^Consulate or Embassy of Foreign Country$|^Other Notified Persons$|^Tax Deductor$|^Tax Collector \(Electronic Commerce Operator\)$|^Non Resident Online Services Provider$)/g).test(tprTy);
+                    var displayPattern =(response.ctj).match('Jurisdictional Office');
+            		if(displayPattern){
+            			$scope.ctjPattern=true;
+            		}
+            		var statePattern =(response.stj).match('Jurisdictional Office');
+            		if(statePattern){
+            			$scope.stjPattern=true;
+            		}
+					if(response.filingStatus){
+                        for(var i =0;i<response.filingStatus[0].length;i++){
+                            var parts = response.filingStatus[0][i].dof.split('/');
+                            var date= new Date(parts[2], parts[1]-1, parts[0]); 
+                            response.filingStatus[0][i].dof=date;
+                            
+                        }
+					$scope.filingStatus_payload =response.filingStatus[0];
+					$scope.listOfStatus = new NgTableParams({
+                    count: 10,
+                    sorting: {
+                        fy: 'asc'
+                    }
+                }, {
+                        counts: [],
+                        dataset: $scope.filingStatus_payload
+                    });
+					}
+                    $scope.searchtaxp.$setPristine();
+                    $scope.for_gstin.searchresult = true;
+                    $scope.showCap = false;
+                    $scope.for_gstin.num = null;
+                }
+
+
+            });
+
+        } 
+
+    };
+    
+    //Adding below two functions for peak filing issue
+    $scope.searchTaxpayerpreLogin = function() {
+         $scope.fileData = false;
+        $scope.noRecord = false;
+        //CR 20474 Part B changes
+        $scope.profileData = false; 
+        $scope.initial = true;
+        $scope.userProfileDetails = false; 
+        //CR 20474 Part B changes
+        $scope.filingStatus_payload=false;
+
+		$scope.errorMessage = false;
+        if ($scope.for_gstin && (!$scope.for_gstin.num || $scope.for_gstin.num == "")) {
+			$scope.searchtaxp.for_gstin.$setValidity("required", false);
+			return;
+		}
+		if ($scope.for_gstin && !$scope.validateGstinUin($scope.for_gstin.num)) {
+			$scope.searchtaxp.for_gstin.$setValidity("pattern", false);
+			return;
+		}
+		$scope.showFinYearDropdown = false;
+        $scope.for_gstin.searchresult = false;
+        $scope.for_mand = false;
+        $scope.for_w_gst = false;
+        $scope.for_cap_gst = false;
+        $scope.nba = false;
+        $scope.taxpayerType = undefined;
+
+        if ($scope.searchtaxp.$valid) {
+
+            $scope.request = {
+
+                "gstin": $scope.for_gstin.num,
+                "captcha": $scope.for_gstin.captcha
+            };
+
+            ajax.post("/services/api/search/taxpayerDetails", $scope.request).then(function(response) {
+                $scope.for_gstin.captcha = null;
+                $scope.for_cap_gst = false;
+                $scope.captchaObj.refresh();
+                $scope.searchtaxp.$setPristine();
+                //$scope.searchtaxp.for_gstin.$setDirty();
+                if (response.errorCode === "SWEB_9034") {
+                    $scope.for_mand = true;
+                    $scope.for_gstin.searchresult = false;
+                } else if (response.errorCode === "SWEB_9032" || response.errorCode === "SWEB_9035") {
+                    $scope.for_w_gst = true; //invalid gst
+                    $scope.for_gstin.searchresult = false;
+                    $scope.searchtaxp.$setPristine();
+                } else if (response.errorCode === "SWEB_9021") {
+
+                    $scope.alertMsgLogin = false;
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    $scope.searchtaxp.$setPristine();
+
+                    $scope.for_gstin.searchresult = false;
+                } else if (response.errorCode === "SWEB_8000") {
+
+                    $scope.alertMsgLogin = false;
+                    $scope.searchtaxp.$setPristine();
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    $scope.for_gstin.searchresult = false;
+                } else if (response.errorCode === "SWEB_9000") {
+
+                    $scope.searchtaxp.$setPristine();
+                    // $scope.searchtaxp.for_gstin.$setDirty();
+                    $scope.searchtaxp.cap.$setValidity("invalid_captcha", false);
+                    $scope.for_gstin.captcha = null;
+                    $scope.captchaObj.refresh();
+                    $scope.for_gstin.searchresult = false;
+                }  else if (response.error && response.error.error_cd && (response.error.error_cd === "SWEB_9032" || response.error.error_cd === "SWEB_9035")) {
+                    $scope.for_w_gst = true; //invalid gst
+					//$scope.errorMsg1 = $scope.trans["ERR_" + response.error.error_cd];
+                    $scope.for_gstin.searchresult = false;
+                    $scope.searchtaxp.$setPristine();
+                
+                }  else if (response.error && response.error.error_cd &&(response.error.error_cd === "SWEB_8000")) {
+					$scope.alertMsgLogin = false;
+                    $scope.searchtaxp.$setPristine();
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.error.error_cd];
+                    $scope.for_gstin.searchresult = false; 
+                }
+                else {
+                    
+                    if(response.nba === 'NA' || !response.nba){
+                        $scope.nba = true;
+                    }
+                    else {
+                        response.nba = _.without(response.nba, null);
+                    }
+                 
+                    //CR 20474  Part B changes
+                    $scope.userType = ((response && response.dty) ? response.dty : "");
+                    $scope.userGstin = ((response && response.gstin) ? response.gstin : "");
+                    //CR 20474  Part B changes end
+                    $scope.submitted = true;
+                    $scope.alertMsgLogin = true;
+
+                    $scope.searchTaxpre_Payload = response;
+					 $scope.trdgstin = $scope.searchTaxpre_Payload.gstin;
+                    //CR18285
+                    if($scope.searchTaxpre_Payload.ntcrbs)
+                        getNtrCoreBusDes($scope.searchTaxpre_Payload.ntcrbs);
+
+                    var tprTy = ((response && response.dty) ? response.dty : "");
+                    var gSts = ((response && response.sts) ? response.sts : "");
+                    $scope.isCxSts = (/(^Cancelled$|^Cancelled due to expiry of registration period$|^Cancelled suo-moto$|^Cancelled on application of Taxpayer$|^Inactive$|^Suspended$|^Cancelled on Request of Taxpayer$)/g).test(gSts);
+                    $scope.hasAdhr = !(/(^United Nation Body$|^Consulate or Embassy of Foreign Country$|^Other Notified Persons$|^Tax Deductor$|^Tax Collector \(Electronic Commerce Operator\)$|^Non Resident Online Services Provider$)/g).test(tprTy);
+                    $scope.hasEkyc = !(/(^United Nation Body$|^Consulate or Embassy of Foreign Country$|^Other Notified Persons$|^Tax Deductor$|^Tax Collector \(Electronic Commerce Operator\)$|^Non Resident Online Services Provider$)/g).test(tprTy);
+                    $scope.ctjPattern=false;
+                    $scope.stjPattern=false;
+                    $scope.tradeFlag=false;
+                    var gstinregexp =/[0-9]{2}[a-zA-Z]{5}[0-9]{4}[a-zA-Z]{1}[1-9A-Za-z]{1}[Zz1-9A-Ja-j]{1}[0-9a-zA-Z]{1}/;
+                    var tdsregexp = /[0-9]{2}[a-zA-Z]{4}[a-zA-Z0-9]{1}[0-9]{4}[a-zA-Z]{1}[1-9A-Za-z]{1}[D]{1}[0-9a-zA-Z]{1}/;
+                    var tcsregexp = /[0-9]{2}[a-zA-Z]{5}[0-9]{4}[a-zA-Z]{1}[1-9A-Za-z]{1}[C]{1}[0-9a-zA-Z]{1}/;
+                    if(gstinregexp.test($scope.for_gstin.num) || tdsregexp.test($scope.for_gstin.num) || tcsregexp.test($scope.for_gstin.num)){
+                    	$scope.tradeFlag=true;
+                    }
+                    var goodServiveURL_pre = "/services/api/search/goodservice?gstin="+$scope.for_gstin.num;
+                    getGoodsServices_value(goodServiveURL_pre);
+
+            		if(response.ctj){
+            			$scope.ctjPattern=true;
+                        var splitCTJVal = commonJurisdiction_split(response.ctj);
+                        splitCTJVal.unshift("(JURISDICTION - CENTER)");
+                        if((response.ctj).indexOf('Jurisdictional Office')>0){
+                            response.admOfc= splitCTJVal;
+            		}
+                    else {
+                            response.othrOfc = splitCTJVal;
+                        }
+                    }
+            		
+            		if(response.stj){
+            			$scope.stjPattern=true;
+                        var splitSTJVal = commonJurisdiction_split(response.stj);
+                        splitSTJVal.unshift("(JURISDICTION - STATE)")
+                        if((response.stj).indexOf('Jurisdictional Office')>0){
+                            response.admOfc= splitSTJVal;
+            		}
+                    else {
+                            response.othrOfc = splitSTJVal;
+                        }
+                    }
+                    $scope.searchtaxp.$setPristine();
+                    $scope.for_gstin.searchresult = true;
+                    $scope.showCap = false;
+                    $scope.for_gstin.num = null;
+                    checkTaxpayerInfo(response.dty);
+                }
+
+
+            });
+        } 
+
+    };
+    var commonJurisdiction_split = function(data) {
+        var removeVal = data.replace("(Jurisdictional Office)", "")
+        var splitValue = removeVal.split(',');
+        return splitValue;
+    }
+    function checkTaxpayerInfo(payload) {
+        $scope.taxpayerType = payload || $scope.taxpayerType;
+        var taxPayerDesc;
+        var taxpayerJSON = $scope.taxpayerJson.data;
+        $('.taxpayer-info [data-toggle="tooltip"]').attr("data-original-title", null);
+        for(var i =0;i<taxpayerJSON.length;i++) {
+            if(taxpayerJSON[i].c == $scope.taxpayerType) {
+                taxPayerDesc = taxpayerJSON[i].desc;
+        } 
+        }
+        if ($('.taxpayer-info [data-toggle="tooltip"]').is(':visible')) {
+            $('.taxpayer-info [data-toggle="tooltip"]').attr("data-original-title", taxPayerDesc);
+        } else {
+            setTimeout(checkTaxpayerInfo, 50);
+        }
+    };
+    $scope.getTaxpayerTypes = function() {
+        ajax.get('/pages/services/data/taxpayertypes.json', {}, {}, function() {
+            $().blockPage(true);
+            $scope.errors.regTypes = "Loading..";
+        }, function() {
+            $().blockPage(false);
+        }).then(function(response) {
+            $scope.taxpayerJson = response;
+        });
+    };
+    $scope.getTaxpayerTypes();
+    var getGoodsServices_value = function(url) {
+        $scope.modifiedGDServArr = [];
+         ajax.get(url).then(function(response) {
+            if(response.errorCode === "SWEB_9021" || response.errorCode === "SWEB_8000") {
+                $scope.goodServErrMsg = $scope.trans["ERR_" + response.errorCode] || response.message;
+            }
+            else if(response.errorCode === "FO8000") {
+                $scope.goodServErrMsg = undefined;
+            }
+            else {
+                GoodServiceArray(response);
+                $scope.goodServErrMsg = undefined;
+            }
+        });
+        function GoodServiceArray(value) {
+            var goodsVal = value.bzgddtls;
+            var serviceVal = value.bzsdtls;
+            var checkMaxArr = [ ];
+            if(goodsVal){
+                checkMaxArr[goodsVal.length]= goodsVal;
+            }
+            if(serviceVal) {
+                checkMaxArr[serviceVal.length]= serviceVal;
+            }
+            var checkGDServArr =checkMaxArr[checkMaxArr.length-1];
+            for(var i=0; i<= checkGDServArr.length-1;i++){
+                $scope.modifiedGDServArr.push({"Goods": goodsVal && goodsVal[i], "Service" : serviceVal && serviceVal[i]})
+            }
+        }
+    }
+    $scope.getFinYearDropdown= function(loginType){
+		$scope.showfiling_show = true;
+		$scope.errorMessage = false;
+        $scope.filingStatus_payload=false;
+        $scope.fileData = false;
+        $scope.liabilityStatus_payload = false;
+        $scope.liabilityData = false;
+        $scope.ewayStatus_payload = false;  
+        $scope.ewayData = false;
+		$scope.noLiabilityRecord = false;
+        $scope.noRecord = false;         
+        $scope.profileData = false;
+		$scope.userProfileDetails = false;
+		var dropdownUrl ;
+        if(loginType == "prelogin") {
+            dropdownUrl = "/services/api/dropdownfinyear";
+			$scope.request ={
+			"gstin": $scope.userGstin
+		};
+        } else {
+            dropdownUrl = $scope.servers["GST_PUBLICSERVICES_R1_URL"] + "/auth/api/dropdownfinyear";
+        }       
+        ajax.get(dropdownUrl,$scope.request).then(function (response) {
+			$scope.showfiling_show = false;
+			 $scope.for_gstin.captcha = null;
+                $scope.for_cap_gst = false;
+                if(loginType == "prelogin") {
+                    $scope.captchaObj.refresh();
+                    $scope.searchtaxp.$setPristine();
+                }
+            if (response.status === 1) {
+                $scope.finddyears = response.data;                
+                $scope.finddyears = $scope.finddyears.sort(function (a, b) { return (b.year.substring(0, 4)) - (a.year.substring(0, 4)) });            
+                $scope.finyr = $scope.finddyears[0];
+				$scope.showFinYearDropdown = true;
+               
+            } else {
+                $scope.errorMessage = true;
+            }
+        }, function (response) {
+            $log.debug(response);
+            //var url = $().getServers().GST_SERVICES_R1_URL + "/services/error/system";
+            //$window.location.href = url;
+
+        });		
+	}
+	
+    $scope.getFilingData = function(year,loginType) {
+		$scope.showfiling_show = true;
+		$scope.errorMessage = false;
+        $scope.filingStatus_payload=false;
+        $scope.fileData = false;
+        $scope.liabilityStatus_payload = false;
+        $scope.liabilityData = false;
+        $scope.ewayStatus_payload = false;  
+        $scope.ewayData = false;
+		$scope.noLiabilityRecord = false;
+        $scope.noRecord = false;         
+        $scope.profileData = false;
+		$scope.userProfileDetails = false;
+		$scope.request.fy = year.value;
+        //CR 20474 PartB changes
+        var filingURL ;
+        if(loginType == "prelogin") {
+            filingURL = "/services/api/search/taxpayerReturnDetails";
+        } else {
+            filingURL = $scope.servers["GST_PUBLICSERVICES_R1_URL"]+"/auth/api/search/taxpayerReturnDetails";
+        }
+            ajax.post(filingURL, $scope.request).then(function(response) {
+                $scope.showfiling_show = false;
+                $scope.for_gstin.captcha = null;
+                $scope.for_cap_gst = false;
+                if(loginType == "prelogin") {
+                $scope.captchaObj.refresh();
+                $scope.searchtaxp.$setPristine();
+                }
+                //$scope.searchtaxp.for_gstin.$setDirty();
+                if (response.errorCode === "SWEB_9034") {
+                    $scope.for_mand = true;
+                    $scope.for_gstin.searchresult = false;
+                } else if (response.errorCode === "SWEB_9032" || response.errorCode === "SWEB_9035") {
+                    $scope.for_w_gst = true; //invalid gst
+                    $scope.for_gstin.searchresult = false;
+                    $scope.searchtaxp && $scope.searchtaxp.$setPristine();
+                } else if (response.errorCode === "SWEB_9021") {
+
+                    $scope.alertMsgLogin = false;
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    $scope.searchtaxp && $scope.searchtaxp.$setPristine();
+
+                    $scope.for_gstin.searchresult = false;
+                } else if (response.errorCode === "SWEB_8000") {
+
+                    $scope.alertMsgLogin = false;
+                    $scope.searchtaxp && $scope.searchtaxp.$setPristine();
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    $scope.for_gstin.searchresult = false;
+                } else if (response.errorCode === "SWEB_9000") {
+                    if($scope.searchtaxp) {
+                    $scope.searchtaxp.$setPristine();
+                    // $scope.searchtaxp.for_gstin.$setDirty();
+                    $scope.searchtaxp.cap.$setValidity("invalid_captcha", false);
+                        $scope.captchaObj.refresh();
+                    }
+                    $scope.for_gstin.captcha = null;
+                    $scope.captchaObj.refresh();
+                    $scope.for_gstin.searchresult = false;
+                } else {
+                    $scope.fileData = true;
+					if(response.filingStatus){
+                        /*CR 17651 - filing table changes*/
+                        var respArr = response.filingStatus[0];
+                        var respArrWTordrBY = addOrderByValue(respArr);
+                        console.log(respArrWTordrBY);
+                        var makeNewArray = _.groupBy(respArrWTordrBY,"rtntype");
+                        var filingValue = Object.keys(makeNewArray);
+                        var typeArr = ["GSTR10","GSTR3B","GSTR1","CMP08","GSTR4","GSTR5","GSTR5A","GSTR6","GSTR7","GSTR8","GSTR11","GSTR9","GSTR9A","GSTR9C","GSTR4X","GSTR1A"];
+                        var filterVal = function(val) {
+                            return filingValue.indexOf(val) !== -1
+                        }
+                        var neededArr = typeArr.filter(filterVal); 
+                        $scope.fillingValues = neededArr;
+                            
+                        $scope.filingStatus_payload = [makeNewArray];
+					$scope.listOfStatus = new NgTableParams({
+                    count: 10,
+                    sorting: {
+                        fy: 'asc'
+                    }
+                }, {
+                        counts: [],
+                        dataset: $scope.filingStatus_payload
+                    });
+					}
+                    else{
+                        $scope.noRecord = true;
+                    }
+                }
+
+
+            });
+
+    };
+
+    //CR 20474 Part B changes
+    $scope.getProfileData = function(loginType) {    
+		$scope.showFinYearDropdown = false;
+		$scope.errorMessage = false;
+        $scope.filingStatus_payload=false;
+        $scope.fileData = false;
+        $scope.liabilityStatus_payload = false;
+        $scope.liabilityData = false;
+        $scope.ewayStatus_payload = false;  
+        $scope.ewayData = false;
+		$scope.noLiabilityRecord = false;
+        $scope.noRecord = false;         
+        $scope.profileData = true;
+        var dt = new Date();
+        var mon = dt.getMonth();
+        $scope.currentFY = (mon < 3) ? dt.getFullYear() - 1 : dt.getFullYear();
+        $scope.prevFY = parseInt($scope.currentFY) - 1;
+        
+        var fy = $scope.currentFY;
+        if($scope.initial){
+            fy = $scope.currentFY;
+            var yr = "" + (parseInt(fy) + 1);
+            $scope.finYear = fy + "-" + yr.substring(2);
+            $scope.hyperlinkText = $scope.trans.HYP_PREV;           
+            
+        }
+        else{
+            fy = $scope.prevFY;
+            var yr = "" + (parseInt(fy) + 1);
+            $scope.finYear = fy + "-" + yr.substring(2);
+            $scope.hyperlinkText = $scope.trans.HYP_CURR;            
+            
+        }
+        
+        
+        var profileURL ;
+        var param = {
+            "gstin" : $scope.userGstin,
+            "fy" : fy
+        }
+        
+        if(loginType == "prelogin") {
+            profileURL = "/services/api/search/taxpayerProfileDetails";
+        } else {
+            profileURL = $scope.servers["GST_SERVICES_R1_URL"]+"/services/auth/api/search/taxpayerProfileDetails";
+        }
+        
+        ajax.get(profileURL, param).then(function(response) {
+           // $().blockPage(false);
+            if(loginType == "prelogin") {
+                $scope.captchaObj.refresh();
+                $scope.searchtaxp.$setPristine();
+            }
+            if (response.status == 1) {
+                $scope.qtrList = { "Q1": 'Not Applicable', "Q2": 'Not Applicable', "Q3": 'Not Applicable', "Q4": 'Not Applicable' };
+                $scope.profile = response.data.response;
+                for (var x = 0; x < 4; x++) {
+                    if (angular.isDefined($scope.profile[x])) {
+                        var pref = $scope.profile[x].quarter;
+                        $scope.qtrList[pref] = $scope.profile[x].preference === 'M' ? 'Monthly' : $scope.profile[x].preference === 'Q' ? 'Quarterly' : 'Not Applicable';
+                    }
+                }
+                $scope.noProfileDetails = false;
+                $scope.userProfileDetails = true;
+                
+            } else {
+                if (response.error.errorCode && (response.error.errorCode === 'RT-NPRFA-1006' || response.error.errorCode === 'RT-NPRFA-1007')) {
+                    $scope.noProfileMsg = response.error.message;
+                    $scope.noProfileDetails = true;
+                    $scope.userProfileDetails = true;
+                }
+                else if (response.error.errorCode && response.error.errorCode === 'RT-NPRFA-1005'){
+                    $scope.noProfileMsg = $scope.trans.ERR_NOT_REG;
+                    $scope.noProfileDetails = true;
+                    $scope.userProfileDetails = true; 
+                }
+                else {
+                    $scope.noProfileMsg = $scope.trans.ERR_NO_DETAILS;
+                    $scope.noProfileDetails = true;
+                    $scope.userProfileDetails = true;
+                }
+            }
+        },
+        function(err) {
+            $().blockPage(false);
+            $scope.noProfileMsg = $scope.trans.ERR_NO_DETAILS;
+            $scope.noProfileDetails = true;
+        });
+        
+    };
+
+    $scope.changeYear = function(loginType) {
+        if($scope.initial){
+            $scope.initial = false;
+        }
+        else{
+            $scope.initial = true; 
+        }
+        $scope.getProfileData(loginType);
+    }
+    //CR 20474 Part B changes End
+
+    $scope.setTaxPeriod = function(financialYear){
+        return financialYear.map(function(el){
+            if(el['profile'] === 'Q'){
+                let currTaxPeriod= el['taxperiod'].substr(0,3).toLowerCase();
+                if(currTaxPeriod==='jan' || currTaxPeriod==='feb' || currTaxPeriod==='mar'){
+                    el['taxperiod']='January-March';
+                }
+                else if(currTaxPeriod==='apr' || currTaxPeriod==='may' || currTaxPeriod==='jun'){
+                    el['taxperiod']='April-June';
+                }
+                else if(currTaxPeriod==='jul' || currTaxPeriod==='aug'  ||  currTaxPeriod==='sep'){
+                    el['taxperiod']='July-September';
+                }
+                else if(currTaxPeriod==='oct' || currTaxPeriod==='nov' || currTaxPeriod==='dec'){
+                    el['taxperiod']='October-December';
+                }
+            }
+            else{
+                let currTaxPeriod= el['taxperiod'].substr(0,3).toLowerCase();
+                switch(currTaxPeriod){
+                    case 'jan':
+                                el['taxperiod']="January";
+                                break;
+                    case 'feb':
+                                el['taxperiod']="February";
+                                break;
+                    case 'mar':
+                                el['taxperiod']="March";
+                                break;
+                    case 'apr':
+                                el['taxperiod']="April";
+                                break;
+                    case 'may':
+                                el['taxperiod']="May";
+                                break;
+                    case 'jun':
+                                el['taxperiod']="June";
+                                break;
+                    case 'jul':
+                                el['taxperiod']="July";
+                                break;
+                    case 'aug':
+                                el['taxperiod']="August";
+                                break;
+                    case 'sep':
+                                el['taxperiod']="September";
+                                break;
+                    case 'oct':
+                                el['taxperiod']="October";
+                                break;
+                    case 'nov':
+                                el['taxperiod']="November";
+                                break;
+                    case 'dec':
+                                el['taxperiod']="December";
+                                break;
+                }
+            }
+            return el;
+        });
+    }
+
+    $scope.sortTaxPeriod= function(financialYear){
+        let order={
+            "April":1,
+            "April-June":2,
+            "May":3,
+            "June":4,
+            "July":5,
+            "July-September":6,
+            "August":7,
+            "Septempber":8,
+            "October":9,
+            "October-December":10,
+            "November":11,
+            "December":12,
+            "January":13,
+            "January-March":14,
+            "February":15,
+            "March":16
+        }
+        for(var i=0;i<financialYear.length;i++){
+            var period=financialYear[i];
+            period["order"]=order[period["taxperiod"]];
+        }
+        // for(let period of financialYear){
+        //     period["order"]=order[period["taxperiod"]];
+        // }
+        financialYear.sort(function(first,second){return (first.order<second.order ? 1 : -1 )})
+        // financialYear.sort((first,second)=>{return (first.order<second.order ? 1 : -1 )})
+        return financialYear;
+    }
+
+    $scope.getLiabilityPaidPercentage = function() {
+		$scope.showFinYearDropdown = false;
+		$scope.errorMessage = false;
+        $scope.noRecord = false;
+        $scope.noLiabilityRecord = false;
+        $scope.filingStatus_payload=false;
+        $scope.ewayStatus_payload = false;
+        $scope.liabilityStatus_payload = false;
+        $scope.searchtax.$setPristine();
+        $scope.ewayData = false;
+		$scope.fileData = false;
+        $scope.showfiling_show = false;
+        $scope.showLiability_show=true;
+        //CR 20474  Part B changes
+        $scope.profileData = false; 
+        $scope.initial = true; 
+        $scope.userProfileDetails = false; 
+        //CR 20474 Part B changes
+        var URL = $scope.servers["GST_PUBLICSERVICES_R1_URL"]+"/auth/api/get/getLiabRatio?gstin="+$scope.for_gstin.num;
+            ajax.get(URL).then(function(response) {
+                $scope.showLiability_show = false;
+				$scope.searchtax.$setPristine();
+				if (response.errorCode === "SWEB_9034") {
+					$scope.for_mand = true;
+					$scope.for_gstin.searchresult = false;
+				} else if (response.errorCode === "SWEB_9032" || response.errorCode === "SWEB_9035") {
+					$scope.for_w_gst = true; //invalid gst
+					$scope.for_gstin.searchresult = false;
+					$scope.searchtax.$setPristine();
+				} else if (response.errorCode === "SWEB_9021") {
+					$scope.alertMsgLogin = false;
+					$scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+					$scope.searchtax.$setPristine();
+					$scope.for_gstin.searchresult = false;
+				} else if (response.errorCode === "SWEB_8000") {
+					$scope.alertMsgLogin = false;
+					$scope.searchtax.$setPristine();
+					$scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+					$scope.for_gstin.searchresult = false;
+				}else{
+                    $scope.liabilityData = true;
+                    if(response["msg"]=== undefined) {
+						$scope.currFyDtls = undefined;
+						if(response.curdtls != undefined){
+							$scope.currFyDtls=$scope.setTaxPeriod(response.curdtls);
+                            $scope.currFyDtls=$scope.sortTaxPeriod($scope.currFyDtls);
+						}
+						$scope.prevFyDtls = undefined;
+						if(response.prevdtls != undefined){
+							$scope.prevFyDtls=$scope.setTaxPeriod(response.prevdtls);
+                            $scope.prevFyDtls=$scope.sortTaxPeriod($scope.prevFyDtls);
+						}
+                        let cutfy = response.curfy.substr(2,2);
+						let prvfy = response.prevfy.substr(2,2);
+                        $scope.currFy=response.curfy + "-" + (parseInt(cutfy)+1);
+                        $scope.prevFy=response.prevfy + "-" + (parseInt(prvfy)+1);
+						$scope.currTotal="";
+						if(response.curtotal != undefined){
+							if(response.curtotal ==='-'){
+								$scope.currTotal = response.curtotal;
+							}else{
+								const splittedArr= response.curtotal.split(".");
+								const first= splittedArr[0];
+								const second= splittedArr[1];
+								if(second=== undefined || parseInt(second)===0){
+									$scope.currTotal=first;
+								}
+								else {
+									$scope.currTotal=first+"."+second;
+								}
+							}
+						}
+						$scope.prevTotal="";
+						if(response.prevtotal != undefined){
+							if(response.prevtotal ==='-'){
+								$scope.prevTotal = response.prevtotal;
+							}else{
+								const splittedArr= response.prevtotal.split(".");
+								const first= splittedArr[0];
+								const second= splittedArr[1];
+								if(second=== undefined || parseInt(second)===0){
+									$scope.prevTotal=first;
+								}
+								else {
+									$scope.prevTotal=first+"."+second;
+								}
+							}
+						}
+                        $scope.liabilityStatus_payload=true;
+                    }
+                    else{
+                        $scope.noLiabilityRecord = true;
+                    }
+				}
+            });
+			 $scope.searchtax.$setPristine();
+    };
+
+   
+    var addOrderByValue = function(data){
+        var newData = data;
+        var quarterArr = [
+            {"taxp":"Apr-Jun","orderBy":1},
+            {"taxp":"Jul-Sep","orderBy":2},
+            {"taxp":"Oct-Dec","orderBy":3},
+            {"taxp":"Jan-Mar","orderBy":4}
+        ];
+        var monthArr = [
+            {"taxp":"April","orderBy": 1},
+            {"taxp":"May", "orderBy": 2},
+            {"taxp":"June", "orderBy": 3},
+            {"taxp":"July","orderBy" : 4},{"taxp":"August","orderBy" : 5},{"taxp":"September","orderBy":6},{"taxp":"October","orderBy":7},{"taxp":"November","orderBy":8},{"taxp":"December","orderBy":9},{"taxp":"January","orderBy":10},{"taxp":"February","orderBy":11},{"taxp":"March","orderBy":12}]; 
+        var combinedValue = quarterArr.concat(monthArr)
+        for(var i=0; i<newData.length; i++){
+            for(var j=0;j<combinedValue.length;j++) {
+                if(newData[i].taxp == combinedValue[j].taxp){
+                    newData[i].orderVal = combinedValue[j].orderBy;
+                }
+            }
+        }
+        return newData;
+    }
+    $scope.getEwayBillData = function() {
+		$scope.showFinYearDropdown = false;
+		$scope.errorMessage = false;
+        $scope.ewaybill_show = true;
+        $scope.filingStatus_payload = false;
+		$scope.liabilityStatus_payload = false;
+		$scope.noLiabilityRecord = false;
+        $scope.noRecord = false;
+        $scope.ewayResponse = [];
+        $scope.searchtax.$setPristine();
+        $scope.fileData = false;
+		$scope.liabilityData = false;
+        //CR 20474  Part B changes
+        $scope.profileData = false; 
+        $scope.initial = true; 
+        $scope.userProfileDetails = false; 
+        //CR 20474  Part B changes
+        var EwayBillUrl = $scope.servers["GST_PUBLICSERVICES_R1_URL"]+"/auth/api/get/ewaybillhistory?gstin="+$scope.for_gstin.num;
+        ajax.get(EwayBillUrl).then(function(response){
+            $scope.searchtax.$setPristine();
+            $scope.ewaybill_show = false;
+            if (response.errorCode === "SWEB_9034") {
+                $scope.for_mand = true;
+                $scope.for_gstin.searchresult = false;
+            } else if (response.errorCode === "SWEB_9032" || response.errorCode === "SWEB_9035") {
+                $scope.for_w_gst = true; //invalid gst
+                $scope.for_gstin.searchresult = false;
+                $scope.searchtax.$setPristine();
+            } else if (response.errorCode === "SWEB_9021") {
+                $scope.alertMsgLogin = false;
+                $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                $scope.searchtax.$setPristine();
+                $scope.for_gstin.searchresult = false;
+            } else if (response.errorCode === "SWEB_8000") {
+                $scope.alertMsgLogin = false;
+                $scope.searchtax.$setPristine();
+                $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                $scope.for_gstin.searchresult = false;
+            }
+            else if(response.errorCode === "EWB13510") {
+                $scope.noRecord = response.message;
+                $scope.ewayData = true;
+            }
+            else {
+                populateEwayResponse(response);
+                $scope.ewayStatus_payload= true;
+                $scope.ewayData = true;
+            }
+        });
+        function populateEwayResponse (value) {
+            var blockDate = value.blockdate;
+            var unblockDate = value.unblockdate;
+            var checkFinalArr = [ ];
+            if(blockDate && blockDate != "NA"){
+                checkFinalArr[blockDate.length]= blockDate; 
+            }
+            if(unblockDate && unblockDate != "NA") {
+                checkFinalArr[unblockDate.length]= unblockDate;
+            }
+            var checkBlcUnblcArr = checkFinalArr[checkFinalArr.length-1];
+            for(var i=0; i<= checkBlcUnblcArr.length-1;i++){
+                $scope.ewayResponse.push({"block": blockDate && blockDate[i], "unblock" : unblockDate && unblockDate[i] })
+            }
+            $scope.ewayBillTable = new NgTableParams({
+                count: 10,
+                sorting: {
+                    fy: 'asc'
+                }
+            }, {
+                    counts: [],
+                    dataset: $scope.ewayResponse
+                });
+            $scope.searchtax.$setPristine();
+        }
+    };
+    
+    // Checking GstIn number while searching from Pan
+    if($().getConstant('GstInNo') && $().getConstant('PanNum')){
+       $scope.for_gstin = {};
+       $scope.for_gstin.num = $().getConstant('GstInNo'); // Assigning GstIn number
+       $scope.panNum = $().getConstant('PanNum'); // Assigning PAN number
+       $scope.event = true; // To show the captcha 
+       $scope.showCap = true;
+       $scope.showBckBtn = true;
+       if ($location.path().indexOf("auth") !== -1) {
+           $scope.searchTaxpayer();
+       }
+    }
+    // Checking GstIn number while searching from Pan
+    
+    /* Form Submitter get Pan details Pre */
+    $scope.getPanDetailsPre = function(){
+        if($scope.panNum !== ""){
+          FormSubmitter.submit($scope.servers["GST_SERVICES_R1_URL"]+"/services/searchtpbypan","POST",{'PanNum':$scope.panNum});   
+        }
+    };
+    /* Form Submitter get Pan details Pre */
+    /* Form Submitter get Pan details Post */
+    $scope.getPanDetailsPost = function(){
+        if($scope.panNum !== ""){
+          FormSubmitter.submit($scope.servers["GST_SERVICES_R1_URL"]+"/services/auth/searchtpbypan","POST",{'PanNum':$scope.panNum});   
+        }
+    };
+    /* Form Submitter get Pan details Post */
+
+    /*svvd*/
+    /*CR-19011 - Compliance Rating description*/
+    function getComplianceRatingInfo() {
+        $('.compliance-info [data-toggle="tooltip"]').attr("data-original-title", null);
+        if ($('.compliance-info [data-toggle="tooltip"]').is(':visible')) {
+            var compInfo = ($scope.trans && $scope.trans.INF_COMP_RATNG) ? $scope.trans.INF_COMP_RATNG : "";
+            $('.compliance-info [data-toggle="tooltip"]').attr("data-original-title", compInfo);
+        } else {
+            setTimeout(getComplianceRatingInfo, 50);
+        }
+    }
+
+
+    //full form of Corebusiness Activties from code value.
+    function getNtrCoreBusDes (code){
+		var result = "";
+		if (code !='NA') {
+			//shareData.corevalue = shareData.corevalue.data;
+			var ntrbslist = code.split(":");
+			var ntrbsmstr = shareData.corevalue;
+			for (var cd in ntrbslist) {
+				for (var i = 0; i < ntrbsmstr.length; i++) {
+					if (ntrbsmstr[i].c == ntrbslist[cd]) {
+						result += ntrbsmstr[i].n;
+						if (ntrbsmstr[i].data && ntrbsmstr[i].data.length > 0) {
+							result += ' - ';
+							ntrbsmstr = ntrbsmstr[i].data;
+						}
+						break;
+					}
+				}
+		}
+		} else {
+			result = "NA";
+        }
+        $scope.searchTaxpre_Payload ? $scope.searchTaxpre_Payload.ntcrbs = result : $scope.searchTax_Payload.ntcrbs = result;
+		return result;
+	}
+    
+    //CR:20901: Search Taxpayer Screen Liablity Calculation Formula
+    $scope.showLiabCalcFormula = function() {
+        var url =  "/pages/services/liabpaidperFormula/LiablityPaidPercentageFormula.html" ;
+       $window.open(url, '_blank');
+    }
+    //trade name CR to fetch additional trade names
+    $scope.getaddltrdnm = function(){ 
+        var requestcy = {
+            "gstin": $scope.trdgstin         
+        };
+        ajax.get("api/search/getAddlTrdNams",requestcy, {}, function() {
+            $().blockPage(true);
+        }, function() {
+            $().blockPage(false);
+        }).then(function (response) {
+			if(response && response.length && response.length>0){
+            $scope.addltrdnm = response;
+			}
+			else if(response==null){
+				$scope.addltrdnm=[];
+			}
+            $("#addltrd").modal('show');
+        },function(err){
+            console.log(err);
+        });
+    }
+}

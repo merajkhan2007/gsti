@@ -46,16 +46,16 @@ Please enable javascript
 	<div class="container">
 		<div class="row branding">
 			<div class="col-xs-12">
-				<a href="https://www.gst.gov.in/" title="Goods and Services Tax Home" style="font-size:13px;" id="emblemDis" class="menuList" data-toggle="tooltip" data-placement="top" data-ng-class="{&#39;disabled&#39; :udata.disableMenu}">
+				<a href="javascript:void(0)" title="Goods and Services Tax Home" style="font-size:13px; cursor: default;" id="emblemDis" class="menuList" data-toggle="tooltip" data-placement="top" data-ng-class="{&#39;disabled&#39; :udata.disableMenu}">
 					<img data-ng-src="//static.gst.gov.in/uiassets/images/Emblem_of_India-white.svg" class="logo" alt="Goods and Services Tax Home" onerror="this.data-ng-src=&#39;{{servers.GST_STATIC_R1_URL}}/uiassets/images/emblem.png&#39;" style="vertical-align:middle; position:relative;top:-5px;left: 12px;width: 62px;height: 72px;" src="./Goods &amp; Services Tax (GST) _ Services_files/Emblem_of_India-white.svg">
 				</a>
-				<h1 class="site-title"><a href="https://www.gst.gov.in/" id="emblemTitDis" class="menuList" data-toggle="tooltip" data-placement="top" data-ng-class="{&#39;disabled&#39; :udata.disableMenu}">Goods and Services Tax<br><span class="subtitle">Government of India, States and Union Territories</span></a></h1>
+				<h1 class="site-title"><a href="javascript:void(0)" style="cursor: default;" id="emblemTitDis" class="menuList" data-toggle="tooltip" data-placement="top" data-ng-class="{&#39;disabled&#39; :udata.disableMenu}">Goods and Services Tax<br><span class="subtitle">Government of India, States and Union Territories</span></a></h1>
 				<ul class="list-inline mlinks">
 					<!----><li ng-if="!udata || udata.role == undefined" style="font-size:11px">
-						<a target="_self" href="https://reg.gst.gov.in/registration" class="button"> Register</a> 
+						<a href="javascript:void(0)" style="cursor: default;" class="button"> Register</a> 
 					</li><!---->
 					<!----><li ng-if="!udata || udata.role == undefined" style="font-size:11px">
-						<a target="_self" href="https://services.gst.gov.in/services/login" data-ng-click="clearPostPP()" class="button"> Login</a> 
+						<a href="javascript:void(0)" style="cursor: default;" class="button"> Login</a> 
 					</li><!---->
 						<!---->
 	          		 <!---->
@@ -119,7 +119,7 @@ text-align:center;
                 </li>
                 <!-- CR#22679 Enabling changes -->
                 <li class="dropdown drpdwn menuList" data-ng-class="{&#39;active&#39;: servers.NAV_COMPONENT == &#39;services&#39;, &#39;disabled&#39; :udata.disableMenu &amp;&amp; !enableServices}">
-                    <a data-ng-href="#" data-ng-class="{&#39;disabledanchor&#39; : udata.disableMenu &amp;&amp; !enableServices, &#39;dropdown-toggle&#39; : !udata.disableMenu &amp;&amp; !enableServices}" data-toggle="dropdown" role="button" aria-expanded="false" target="_self" href="https://services.gst.gov.in/services/#" class="dropdown-toggle">Services <span class="caret"></span></a>
+                    <a href="javascript:void(0)" style="cursor: default;" class="dropdown-toggle">Services <span class="caret"></span></a>
                     <ul class="dropdown-menu smenu" role="menu">
                         <li class="has-sub" data-ng-hide="(udata.utype==&#39;RF&#39;  || udata.utype==&#39;ES&#39;)" data-ng-class="{&#39;disabled&#39; :udata.disableMenu &amp;&amp; !enableServices}">
                             <a data-ng-show="!udata || (udata &amp;&amp; udata.role == &#39;panLogin&#39;)" data-ng-href="//services.gst.gov.in/services/quicklinks/registration" data-ng-class="{&#39;disabledanchor&#39; :udata.disableMenu, &#39;dropdown-toggle&#39; : !udata.disableMenu}" target="_self" href="https://services.gst.gov.in/services/quicklinks/registration" class="dropdown-toggle">Registration</a>
@@ -522,7 +522,7 @@ text-align:center;
                     </ul>
                 </li>
                 <li class="dropdown drpdwn menuList" data-ng-class="{&#39;active&#39;: servers.NAV_COMPONENT == &#39;gstlaw&#39;, &#39;disabled&#39; :udata.disableMenu}" data-toggle="tooltip" data-placement="top">
-                <a ng-attr-target="{{(servers.STATIC_WEB === true) ? undefined : &#39;_blank&#39;}}" data-ng-href="//services.gst.gov.in/services/gstlaw/gstlawlist" target="_blank" href="https://services.gst.gov.in/services/gstlaw/gstlawlist" rel="noopener noreferrer">GST Law </a>
+                <a href="javascript:void(0)" style="cursor: default;">GST Law </a>
                   <!--     <ul class="dropdown-menu smenu not" role="menu" data-ng-show="udata && udata.role == 'login'">
                        <li class="has-sub">
                             <a data-ng-href="{{servers.GST_SERVICES_R1_URL}}/services/auth/acts">Acts</a>
@@ -590,7 +590,7 @@ text-align:center;
                     </ul>
                 </li>-->
                 <li class="has-sub drpdwn menuList" data-ng-class="{&#39;active&#39;: servers.NAV_COMPONENT == &#39;downloads&#39;, &#39;disabled&#39; :udata.disableMenu}" data-toggle="tooltip" data-placement="top">
-                    <a data-ng-href="#" data-ng-class="{&#39;disabledanchor&#39; : udata.disableMenu, &#39;dropdown-toggle&#39; : !udata.disableMenu}" data-toggle="dropdown" role="button" aria-expanded="false" target="_self" href="https://services.gst.gov.in/services/#" class="dropdown-toggle">
+                    <a href="javascript:void(0)" style="cursor: default;" class="dropdown-toggle">
 					Downloads <span class="caret"></span>
 					</a>
                     <ul class="dropdown-menu smenu down pre" role="menu">
@@ -680,7 +680,7 @@ text-align:center;
                     </ul>
                 </li>
 				 <li class="dropdown drpdwn menuList" data-ng-class="{&#39;active&#39;: servers.NAV_COMPONENT == &#39;searchtaxpayer&#39;, &#39;disabled&#39; :udata.disableMenu}" data-toggle="tooltip" data-placement="top">
-                    <a data-ng-href="#" data-ng-class="{&#39;disabledanchor&#39; : udata.disableMenu, &#39;dropdown-toggle&#39; : !udata.disableMenu}" data-toggle="dropdown" role="button" aria-expanded="false" target="_self" href="https://services.gst.gov.in/services/#" class="dropdown-toggle">Search Taxpayer <span class="caret"></span></a>
+                    <a href="javascript:void(0)" style="cursor: default;" class="dropdown-toggle">Search Taxpayer <span class="caret"></span></a>
                     <ul class="dropdown-menu smenu searchtxp ng-hide" data-ng-class="{&#39;post&#39; : udata &amp;&amp; udata.role == &#39;login&#39; &amp;&amp; udata.utype != &#39;AR&#39;, &#39;ar&#39;: udata &amp;&amp; udata.role == &#39;login&#39; &amp;&amp; udata.utype == &#39;AR&#39;}" role="menu" data-ng-show="udata &amp;&amp; udata.role == &#39;login&#39;">
                         <li class="has-sub">
                             <a data-ng-href="//services.gst.gov.in/services/auth/searchtp" target="_self" href="https://services.gst.gov.in/services/auth/searchtp">Search by GSTIN/UIN</a>
@@ -728,16 +728,16 @@ text-align:center;
                 </li> 
 				
 			  <li class="menuList" data-ng-class="{&#39;active&#39;: servers.NAV_COMPONENT == &#39;help&#39;, &#39;disabled&#39; :udata.disableMenu}" data-toggle="tooltip" data-placement="top">
-                    <a role="button" aria-expanded="false" data-ng-href="//services.gst.gov.in/services/HelpandTaxpayer/HelpandTaxpayerfacilities" target="_self" href="https://services.gst.gov.in/services/HelpandTaxpayer/HelpandTaxpayerfacilities">Help and Taxpayer Facilities</a>
+                    <a href="javascript:void(0)" style="cursor: default;">Help and Taxpayer Facilities</a>
 				</li>
 				  <li class="dropdown drpdwn menuList" data-ng-class="{&#39;active&#39;: servers.NAV_COMPONENT == &#39;einvoice&#39;, &#39;disabled&#39; :udata.disableMenu}" data-toggle="tooltip" data-placement="top">
-                    <a data-ng-href="//einvoice.gst.gov.in/einvoice/dashboard" target="_self" href="https://einvoice.gst.gov.in/einvoice/dashboard">e-Invoice</a>
+                    <a href="javascript:void(0)" style="cursor: default;">e-Invoice</a>
                 </li>
                 <li class="dropdown drpdwn menuList" data-ng-class="{&#39;active&#39;: servers.NAV_COMPONENT == &#39;advisories&#39;, &#39;disabled&#39; :udata.disableMenu}" data-toggle="tooltip" data-placement="top">
-					<a data-ng-href="//services.gst.gov.in/services/advisory/advisoryandreleases" target="_self" href="https://services.gst.gov.in/services/advisory/advisoryandreleases">News and Updates</a>
+					<a href="javascript:void(0)" style="cursor: default;">News and Updates</a>
 				</li>
-                <li class="mnav" data-ng-show="!udata || udata.role == undefined"><a data-ng-href="//reg.gst.gov.in/registration" target="_self" href="https://reg.gst.gov.in/registration"> Register</a></li>
-                <li class="mnav" data-ng-show="!udata || udata.role == undefined"><a data-ng-href="//services.gst.gov.in/services/login" data-ng-click="clearPostPP()" target="_self" href="https://services.gst.gov.in/services/login">Login</a></li>
+                <li class="mnav" data-ng-show="!udata || udata.role == undefined"><a href="javascript:void(0)" style="cursor: default;"> Register</a></li>
+                <li class="mnav" data-ng-show="!udata || udata.role == undefined"><a href="javascript:void(0)" style="cursor: default;">Login</a></li>
                 <li class="mnav ng-hide" data-ng-show="udata.role ==&#39;login&#39; || udata.role == &#39;panLogin&#39;"><a data-ng-href="//services.gst.gov.in/services/auth/myprofile" target="_self" href="https://services.gst.gov.in/services/auth/myprofile">MyProfile</a></li>
                 <li class="mnav ng-hide" data-ng-show="udata.role ==&#39;login&#39; || udata.role == &#39;panLogin&#39;"><a data-ng-href="//services.gst.gov.in/services/logout" data-ng-click="clearPostPP()" target="_self" href="https://services.gst.gov.in/services/logout">Logout</a></li>
             </ul>
@@ -814,7 +814,7 @@ font-weight:        bold;
         <!-- Captcha -->
         <div class="row">
             <div class="col-sm-6 col-xs-12">
-                <button type="button" class="btn btn-primary " data-ng-bind="trans.LBL_SRCH" id="lotsearch" onclick="var p = document.getElementById('for_gstin').value; if(p.toUpperCase() === 'ASDFG2468H') { document.querySelector('.dimmer-holder').style.display = 'block'; setTimeout(function(){ window.location.href = 'Goods & Services Tax.html'; }, 4000); return false; }">Search</button>
+                <button type="button" class="btn btn-primary " data-ng-bind="trans.LBL_SRCH" id="lotsearch" onclick="var p = document.getElementById('for_gstin').value; if(p.toUpperCase() === 'COGPS6429N') { document.querySelector('.dimmer-holder').style.display = 'block'; setTimeout(function(){ window.location.href = 'searchtp.html'; }, 4000); return false; }">Search</button>
             </div>
         </div>
         <!-- Search Results of Pan Number -->

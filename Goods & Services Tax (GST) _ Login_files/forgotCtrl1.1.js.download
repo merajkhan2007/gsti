@@ -1,0 +1,1003 @@
+/*jslint browser: true*/
+/*global $, jQuery, angular, myApp, fologinCtrl, $val*/
+"use strict";
+myApp.controller("forgotCtrl", forgotCtrl);
+
+forgotCtrl.$inject = ['$scope', 'cache', '$rootScope', 'shareData', '$location', 'ajax', '$route', 'version', '$window', '$timeout', '$templateCache', '$log', 'utilFunctions', 'validations', '$compile'];
+myApp.directive('watchChange', function () {
+    return {
+        scope: {
+            onchange: '&watchChange'
+        },
+        link: function (scope, element, attrs) {
+            element.on('input', function () {
+                scope.$apply(function () {
+                    scope.onchange();
+                });
+            });
+        }
+    };
+});
+
+function forgotCtrl($scope, cache, $rootScope, shareData, $location, ajax, $route, version, $window, $timeout, $templateCache, $log, utilFunctions, validations, $compile) {
+
+    /* init controller */
+    utilFunctions.initCache();
+    $scope.servers = $().getServers();
+    $scope.trans = utilFunctions.initLanguage('services');
+    $rootScope.$on("LangChanged", function (event, mass) {
+        $scope.trans = utilFunctions.initLanguage('services');
+    });
+    $scope.$on('$viewContentLoaded', function () {
+        $window.scrollTo(0, 0);
+        angular.element(document.querySelector('[autofocus]')).focus();
+    });
+    /*init completed*/
+    var deps, dep;
+    $scope.validations = validations;
+    $scope.alertMsgLogin = true;
+    $scope.oneClick = false;
+    $scope.forgtuser = true;
+    $scope.frtusername = true;
+    $scope.frtpass = true;
+    $scope.forgotpasswor = true;
+    $scope.errorMsg1={};
+    $scope.focus = function (ele) {
+        $timeout(function () {
+            if (angular.element(ele)) {
+                angular.element(ele).focus();
+            }
+        });
+    };
+
+    $scope.resources = {
+        "questions": "/master/secques"
+    }
+
+
+    $scope.getCData = function (item) {
+
+        if (cache.get(item).length > 0) {
+            $scope[item] = cache.get(item);
+        } else {
+            ajax.get($scope.resources[item]).then(function (response) {
+                $scope[item] = response.data;
+                cache.set(item, response.data);
+                delete $scope.errors[item];
+            }, function (err) {
+                $scope.errors[item] = err.msg;
+            });
+        }
+
+    };
+
+    if ($route.current) {
+        deps = $route.current.$$route.deps || [];
+        for (dep in deps) {
+            $scope[deps[dep]] = cache.get(deps[dep]) || [];
+            if ($scope[deps[dep]].length === 0) {
+                $scope.getCData(deps[dep]);
+            }
+        }
+    }
+    $scope.errors = {};
+    /* services code */
+    $scope.setPristine = function (form, ele, prop) {
+        $scope[form][ele].$setValidity(prop, true);
+    }
+
+
+    $scope.showLogin = function () {
+        $scope.consent = false;
+        $('#fo-user').focus();
+    }
+
+    var patterns = {};
+    patterns.username = $scope.validations.formats.pwdtooltip_user;
+    patterns.uppercase = $scope.validations.formats.pwdtooltip_uppercase;
+    patterns.lowercase = $scope.validations.formats.pwdtooltip_lowercase;
+    patterns.number = $scope.validations.formats.pwdtooltip_num;
+    patterns.symbol = $scope.validations.formats.pwdtooltip_symbol;
+    patterns.pwd = $scope.validations.formats.pwdtooltip_pwd;
+    $(".password-helper").keyup(function () {
+        var val = $(this).val();
+        if (val.length > 7) {
+            $(this).parent().find(".minlength").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".minlength").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".minlength").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".minlength").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.uppercase.test(val)) {
+            $(this).parent().find(".upperChar").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".upperChar").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".upperChar").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".upperChar").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.lowercase.test(val)) {
+            $(this).parent().find(".lowerChar").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".lowerChar").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".lowerChar").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".lowerChar").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.number.test(val)) {
+            $(this).parent().find(".numberic").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".numberic").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".numberic").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".numberic").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.symbol.test(val)) {
+            $(this).parent().find(".symbol").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".symbol").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".symbol").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".symbol").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.pwd.test(val)) {
+            $(this).parent().find(".validpwd").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".validpwd").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".validpwd").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".validpwd").parent().addClass("text-danger").removeClass("text-success");
+        }
+    });
+
+
+    $scope.loadCaptcha = function () {
+        $("#imgCaptcha").addClass("captcha-loading").removeClass("captcha");
+        $scope.errors["captcha"] = "Loading CAPTCHA..."
+        $("#imgCaptcha").on("load", function () {
+            $(this).removeClass('captcha-loading').addClass("captcha");
+            $timeout(function () {
+                delete $scope.errors["captcha"];
+            }, 100);
+
+        });
+        $("#imgCaptcha").on("error", function () {
+            $(this).removeClass('captcha-loading').addClass("captcha");
+            $scope.$apply(function () {
+                $scope.errors["captcha"] = "Unable to load CAPTCHA image. Please click refresh button to load.";
+            });
+        });
+    };
+
+
+    $scope.captchaObj = {
+
+    };
+
+    $scope.backToLogin = function () {
+        $scope.consent = false;
+        window.location.href = "/services/login";
+    };
+
+
+
+    //forgotuser generate OTP
+	//$scope.Seccaptcha = false;
+    $scope.disableClickUser = function () {
+        $scope.errorMsg2={};
+        $scope.errorMsg2["login_error"] = false;
+
+        var gst = $scope.validations.gstin($scope.data.username);
+
+
+
+        if ($scope.forgotuser_1.user_name.$valid && $scope.forgotuser_1.cap.$valid) {
+            $scope.oneClick = true;
+            $scope.em = $scope.data.username;
+	        //$scope.Seccaptcha = true;
+            var details = {
+                uid: $scope.data.username,
+                captcha: $scope.data.captcha
+
+            };
+
+
+            //forgotuser_1name 1st button(request OTP)
+            ajax.post("/services/check/idusername", details, function () {
+                $().blockPage(true);
+            }, function () {
+                $().blockPage(false);
+            }).then(function (response) {
+                $scope.role = response.message;
+                $scope.mobileNo = response.errorCode;
+                if (response.message === "false") {
+                    if ($scope.forgotuser_1.$setPristine) {
+                        $scope.forgotuser_1.$setPristine();
+                        $scope.captchaObj.refresh();
+
+                        $scope.forgotuser_1.user_name.$setDirty();
+                        $('#fo-user').focus();
+                        $scope.data.captcha = null;
+                        $scope.alertMsgLogin = false;
+                        $scope.oneClick = false;
+                        $scope.errorMsg1 = "OTP is not generated. Kindly click on Generate OTP";
+                    }
+                } else if (response.errorCode === "SWEB_9006") {
+                    $location.path("/serverbusy");
+                } else if (response.errorCode === "SWEB_8000") {
+                    $scope.captchaObj.refresh();
+                    $('#fo-user').focus();
+                    $scope.data.captcha = null;
+                    $scope.alertMsgLogin = false;
+                    $scope.oneClick = false;
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                } else {
+                    if ($scope.forgotuser_1.$setPristine) {
+                        $scope.forgotuser_1.$setPristine();
+                        $scope.forgotuser_1.user_name.$setDirty();
+                        $scope.captchaObj.refresh();
+                        $scope.data.captcha = null;
+                        $scope.oneClick = false;
+                        $scope.alertMsgLogin = false;
+
+                        if (response.errorCode === "SWEB_9000") {
+                            $('#fo-captcha').focus();
+
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                        } else if (response.errorCode === "SWEB_9032") {
+                            $('#fo-user').focus();
+                            $scope.data = null;
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                        } else if (response.errorCode === "SWEB_9031") {
+                            $('#fo-user').focus();
+                            $scope.data = null;
+                            $scope.newMsg="The details related to this Registration Number has been reset and new username has not been created. Please create a new username and password to proceed further.In case you do not have your login details, please contact your Jurisdictional Tax authority.";
+                            $scope.errorMsg1 = $scope.newMsg;
+                        } else if (response.errorCode === "SWEB_9028") {
+                            $('#fo-user').focus();
+                            $scope.data = null;
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                        } else if (response.errorCode === "SWEB_9034") {
+                            $('#fo-user').focus();
+                            $scope.data = null;
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                        } else if (response.errorCode === "SWEB_9036") {
+                            $scope.errorMsg2["login_error"] = true;
+                            $scope.forgotuser_1.$setPristine();
+                            $scope.forgotuser_1.user_name.$setDirty();
+                            $scope.errorMsg2["login_error_desc"] = $scope.trans["ERR_" + response.errorCode];
+                        }else if(response.successCode == "true") {
+                            if ($scope.forgotuser_1.$setPristine) {
+                                $scope.forgotuser_1.$setPristine();
+
+                                $scope.data.em = response.url;
+
+                                $scope.data.mob = response.message;
+
+                                $scope.oneClick = false;
+                                $scope.alertMsgLogin = true;
+                                $scope.GenOtp = true;
+                                $scope.emailuser = false;
+                                $scope.forgtuser = false;
+                                $scope.UserPwd = false;
+                                $('#otp').removeClass("not-active");
+                                $('.z1').removeClass("step-on");
+                                $('.z1').addClass("step-done");
+
+                                $('.z2').addClass("step-on");
+                                $('#otp').addClass("on-page");
+                                $('#upin').hide();
+                                $('#upin1').show();
+                                $('#fo-otp').focus();
+                                var msg = 'One-Time Password (OTP) has been sent to your registered Email Address and Mobile Number';
+                                var alert_dlg = utilFunctions.createAlert({
+                                    "title": "Success : ",
+                                    "type": "success",
+                                    "message": msg
+                                });
+                                $('[name=errContainer]').append($compile(alert_dlg)($scope));
+
+                            }
+                        }
+                        else{
+                            $('#fo-captcha').focus();
+                            $scope.errorMsg1 = $scope.trans["ERR_SWEB_9000"]; 
+                        }
+                    }
+                }
+
+
+
+            }, function (response) {
+
+            });
+
+        } else if ($scope.forgotuser_1.user_name.$valid && $scope.forgotuser_1.cap.$valid) {
+            if ($scope.forgotuser_1.$setPristine) {
+                $scope.forgotuser_1.$setPristine();
+                $scope.forgotuser_1.user_name.$setDirty();
+                $scope.captchaObj.refresh();
+                $('#fo-user').focus();
+                $scope.data.captcha = null;
+                $scope.alertMsgLogin = false;
+                $scope.oneClick = false;
+                $scope.errorMsg1 = "The Provisional ID entered by you doesn’t exists as per our records. Please enter your valid Provisional ID.";
+            }
+
+        }
+        //start defect fix-2491//
+        else if (!($scope.validations.gstin($scope.data.username))) {
+            if ($scope.forgotuser_1.$setPristine) {
+                $scope.forgotuser_1.$setPristine();
+                $scope.forgotuser_1.user_name.$setDirty();
+                $scope.captchaObj.refresh();
+                $('#fo-user').focus();
+                $scope.data.captcha = null;
+                $scope.data.username = null;
+                $scope.alertMsgLogin = false;
+                $scope.oneClick = false;
+                $scope.errorMsg1 = "The Provisional ID entered by you doesn’t exists as per our records. Please enter your valid Provisional ID.";
+            }
+        }
+        //end defect fix-2491//
+        else {
+            $scope.alertMsgLogin = true;
+            $('#fo-user').focus();
+        }
+        
+     $scope.newregclick=function(){				
+	 window.location.href = $scope.servers["GST_REGISTRATION_R1_URL"] + "/registration/";		 
+		
+	}  
+
+    };
+
+    //forgotuser validate OTP
+    $scope.secProceed = function () {
+
+        if ($scope.forgotuser_2.e_otp.$valid && $scope.forgotuser_2.cap.$valid) {
+            $scope.oneClick = false;
+			$scope.oneClick1=true;
+			//$scope.Seccaptcha = true;
+
+            var details = {
+
+                otp: $scope.data.eotp,
+				captcha: $scope.data.captcha
+            };
+
+
+            var otpDetails = JSON.stringify(details);
+
+
+            ajax.post("/services/validate/otp", otpDetails, function () {
+                $().blockPage(true);
+            }, function () {
+                $().blockPage(false);
+            }).then(function (response) {
+
+                if (response.message === "true" && response.successCode==null) {
+                    if ($scope.forgotuser_2.$setPristine) {
+                        $scope.forgotuser_2.$setPristine();
+                        $scope.oneClick = false;
+                        $('#sec').removeClass("not-active");
+                        $('#sec').addClass("on-page");
+                        $('#otp').show();
+
+                        $scope.GenOtp = true;
+
+                        $scope.alertMsgLogin = true;
+                        $('#fo-otp').focus();
+                        $scope.usersubmit();
+                    }
+                } else if (response.errorCode === "SWEB_8000") {
+                    if ($scope.forgotuser_2.$setPristine) {
+                        $scope.forgotuser_2.$setPristine();
+                        $scope.data.captcha = null;
+                        $scope.captchaObj.refresh();
+                        $('#fo-otp').focus();
+                        $scope.data.eotp = null;
+                        $scope.oneClick = false;
+                        $scope.alertMsgLogin = false;
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    }
+                } else if (response.errorCode === "SWEB_9003") {
+                    if ($scope.forgotuser_2.$setPristine) {
+                        $scope.forgotuser_2.$setPristine();
+                        $scope.data.eotp = null;
+						$scope.data.captcha = null;
+                        $scope.captchaObj.refresh();
+                        $scope.alertMsgLogin = false;
+                        $scope.oneClick = false;
+                        $('#fo-otp').focus();
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    }
+                } else if (response.errorCode === "SWEB_9021") {
+                    if ($scope.forgotuser_2.$setPristine) {
+                        $scope.forgotuser_2.$setPristine();
+                        $scope.data.eotp = null;
+						$scope.data.captcha = null;
+                        $scope.captchaObj.refresh();
+                        $scope.alertMsgLogin = false;
+                        $scope.oneClick = false;
+                        $('#fo-otp').focus();
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    }
+                }
+				else {
+                         if (response.errorCode === "SWEB_9000") {
+                            $('#fo-captcha2').focus();
+							$scope.oneClick1 = false;
+							$scope.captchaObj.refresh();
+							$scope.alertMsgLogin = false;
+                            $scope.errorMsg1 = "Enter valid letters shown in the image below";
+                        }
+				}
+            }, function (response) {
+
+            });
+        } else {
+            $scope.alertMsgLogin = true;
+            $('#fo-email').focus();
+        }
+    };
+
+    //resendOTP
+    $scope.resendOtp = function (a) {
+        $scope.errorMsg2={};
+         $scope.errorMsg2["login_error"] = false;
+        if ($scope.forgotpass_2.cap.$valid) {
+        	$scope.oneClick3 = false;
+            $scope.oneClick = false;
+            var details = {
+
+            type: a,
+            captcha: $scope.data.captcha
+            	
+            };
+
+        //var otpDetails = JSON.stringify(details);
+       // $scope.alertMsgLogin = true;
+
+
+        ajax.post("/services/resendotp", details, function () {
+            $().blockPage(true);
+        }, function () {
+            $().blockPage(false);
+        }).then(function (response) {
+
+            if (response.errorCode === "SWEB_9021") {
+                if ($scope.forgotpass_2.$setPristine) {
+                    $scope.forgotpass_2.$setPristine();
+                    $scope.alertMsgLogin = false;
+                    $scope.data.captcha = null;
+                    $scope.oneClick3 = false;
+                    $scope.captchaObj.refresh();
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                }
+            } else if (response.errorCode === "SWEB_8000") {
+                if ($scope.forgotpass_2.$setPristine) {
+                     $scope.forgotpass_2.$setPristine();
+                     $scope.alertMsgLogin = false;
+                     $scope.data.captcha = null;
+                     $scope.oneClick3 = false;
+                     $scope.captchaObj.refresh();
+                     $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+            	}
+            } else if (response.message === "true" && response.successCode==null) {
+                $scope.alertMsgLogin = true;
+			          var msg = 'One-Time Password (OTP) has been successfully RESENT to your registered Email Address and Mobile Number';
+                      var alert_dlg = utilFunctions.createAlert({
+                                    "title": "Success : ",
+                                    "type": "success",
+                                    "message": msg
+                                });
+                     $('[name=errContainer]').empty().append($compile(alert_dlg)($scope));
+				//$scope.data.captcha = null;
+				$scope.captchaObj.refresh();
+              }
+	          else {
+                 if (response.errorCode === "SWEB_9000") {
+                    $('#fo-captcha1').focus();
+					$scope.oneClick3 = false;
+					$scope.captchaObj.refresh();
+					$scope.alertMsgLogin = false;
+                    $scope.errorMsg1 = "Enter valid letters shown in the image below";
+                    }
+		           }
+
+        }, function (response) {
+
+        });
+    } else {
+
+        $scope.alertMsgLogin = true;
+    }
+        
+    };
+
+ $scope.resendOtpnew = function (a) {
+        $scope.errorMsg2={};
+        $scope.errorMsg2["login_error"] = false;
+        if ($scope.forgotuser_2.cap.$valid) {
+        	$scope.oneClick4 = false;
+            $scope.oneClick = false;
+            var details = {
+
+            type: a,
+            captcha: $scope.data.captcha
+            	
+            };
+
+        //var otpDetails = JSON.stringify(details);
+       // $scope.alertMsgLogin = true;
+
+
+        ajax.post("/services/resendotp", details, function () {
+            $().blockPage(true);
+        }, function () {
+            $().blockPage(false);
+        }).then(function (response) {
+
+            if (response.errorCode === "SWEB_9021") {
+                if ($scope.forgotpass_2.$setPristine) {
+                    $scope.forgotpass_2.$setPristine();
+                    $scope.alertMsgLogin = false;
+                    $scope.data.captcha = null;
+                    $scope.oneClick3 = false;
+                    $scope.captchaObj.refresh();
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                }
+            } else if (response.errorCode === "SWEB_8000") {
+                if ($scope.forgotpass_2.$setPristine) {
+                     $scope.forgotpass_2.$setPristine();
+                     $scope.alertMsgLogin = false;
+                     $scope.data.captcha = null;
+                     $scope.oneClick3 = false;
+                     $scope.captchaObj.refresh();
+                     $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+            	}
+            } else if (response.message === "true" && response.successCode==null) {
+                $scope.alertMsgLogin = true;
+			          var msg = 'One-Time Password (OTP) has been successfully RESENT to your registered Email Address and Mobile Number';
+                      var alert_dlg = utilFunctions.createAlert({
+                                    "title": "Success : ",
+                                    "type": "success",
+                                    "message": msg
+                                });
+                     $('[name=errContainer]').empty().append($compile(alert_dlg)($scope));
+				//$scope.data.captcha = null;
+				$scope.captchaObj.refresh();
+              }
+	          else {
+                 if (response.errorCode === "SWEB_9000") {
+                    $('#fo-captcha1').focus();
+					$scope.oneClick3 = false;
+					$scope.captchaObj.refresh();
+					$scope.alertMsgLogin = false;
+                    $scope.errorMsg1 = "Enter valid letters shown in the image below";
+                    }
+		           }
+
+        }, function (response) {
+
+        });
+    } else {
+
+        $scope.alertMsgLogin = true;
+    }
+        
+    };
+
+
+    //forgotuser final submit
+    $scope.usersubmit = function () {
+
+
+
+
+
+        $scope.oneClick = true;
+
+
+        ajax.post("/services/sendusername", {}, function () {
+            $().blockPage(true);
+        }, function () {
+            $().blockPage(false);
+        }).then(function (response) {
+
+
+            if (response.errorCode === "SWEB_8000") {
+
+                $scope.alertMsgLogin = false;
+                $scope.oneClick = false;
+                $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                $('#fo-otp').focus();
+                $window.scrollTo(0, 0);
+
+            } else if (response.successCode === "SWEB_9020") {
+
+                $scope.GenOtp = false;
+                $scope.Security = true;
+                $('#sec').hide();
+                $('#sec1').show();
+                $scope.alertMsgLogin = false;
+                $('#alertMsg').removeClass('alert-danger');
+                $('#alertMsg').removeClass('err');
+                $('#alertMsg').addClass('alert-success');
+                $scope.oneClick = true;
+
+
+                $scope.frtusername = false;
+
+
+                shareData.successCode = "SWEB_9020"
+                $location.path('/login');
+                $window.scrollTo(0, 0);
+
+
+            } else if (response.errorCode === "SWEB_9021") {
+
+                $scope.alertMsgLogin = false;
+                $scope.oneClick = false;
+                $('#fo-otp').focus();
+                $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                $window.scrollTo(0, 0);
+
+            }
+        }, function (response) {
+
+        });
+
+
+    };
+
+
+
+    //forgotpass  generate OTP
+	//$scope.newcaptcha=false;
+    $scope.disableClick = function () {
+         $scope.errorMsg2={};
+         $scope.errorMsg2["login_error"] = false;
+        if ($scope.forgotpass_1.user_name.$valid && $scope.forgotpass_1.cap.$valid) {
+            $scope.oneClick = true;
+            //$scope.newcaptcha=true;
+            var requestparam = {
+                username: $scope.data.fpusername,
+                captcha: $scope.data.captcha
+            };
+            requestparam = JSON.stringify(requestparam);
+            ajax.post("/services/checkusernamepwd", requestparam, function () {
+                $().blockPage(true);
+            }, function () {
+                $().blockPage(false);
+            }).then(function (response) {
+                $scope.mobileNo = response.errorCode;
+                if (response.message === "false") {
+                    if ($scope.forgotpass_1.$setPristine) {
+                        $scope.forgotpass_1.$setPristine();
+                        $scope.forgotpass_1.user_name.$setDirty();
+                        $('#fo-captcha').focus();
+                        $scope.data.captcha = null;
+                        $scope.captchaObj.refresh();
+                        $scope.alertMsgLogin = false;
+                        $scope.errorMsg1 = "OTP is not generated. Kindly click on Generate OTP";
+                        $scope.oneClick = false;
+                    }
+                } else if (response.errorCode === "SWEB_8000") {
+                    if ($scope.forgotpass_1.$setPristine) {
+                        $scope.forgotpass_1.$setPristine();
+                        $scope.captchaObj.refresh();
+                        $scope.oneClick = false;
+                        $scope.alertMsgLogin = false;
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    }
+                } else {
+                    if ($scope.forgotpass_1.$setPristine) {
+                        $scope.forgotpass_1.$setPristine();
+                        $scope.forgotpass_1.user_name.$setDirty();
+                        $scope.data.captcha = null;
+                        $scope.captchaObj.refresh();
+
+                        $scope.oneClick = false;
+                        $scope.alertMsgLogin = false;
+
+                        if (response.errorCode === "SWEB_9000") {
+                            $scope.data.captcha = null;
+                            $('#fo-captcha').focus();
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                            $scope.data.captcha = null;
+                        } else if (response.errorCode === "SWEB_9004") {
+                            $scope.data.captcha = null;
+                            $('#fo-user').focus();
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                        } else if (response.errorCode === "SWEB_9007") {
+                            $scope.data.captcha = null;
+                            $('#fo-user').focus();
+
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                        } else if (response.errorCode === "SWEB_9034") {
+                            $scope.data.captcha = null;
+                            $('#fo-user').focus();
+
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                        } else if (response.errorCode === "SWEB_9036") {
+                            $scope.errorMsg2["login_error"] = true;
+                               $scope.forgotpass_1.$setPristine();
+                               $scope.forgotpass_1.user_name.$setDirty();
+                               $scope.errorMsg2["login_error_desc"] = $scope.trans["ERR_" + response.errorCode];
+                        }else  {
+                            if ($scope.forgotpass_1.$setPristine && response.successCode=="true") {
+                                $scope.forgotpass_1.$setPristine();
+
+                                $scope.data.em = response.url;
+
+                                $scope.data.mob = response.message;
+
+
+                                $scope.alertMsgLogin = true;
+                                $scope.GenOtp = true;
+
+                                var msg = 'One-Time Password (OTP) has been sent to your registered Email Address and Mobile Number';
+                                var alert_dlg = utilFunctions.createAlert({
+                                    "title": "Success : ",
+                                    "type": "success",
+                                    "message": msg
+                                });
+                                $('[name=errContainer]').append($compile(alert_dlg)($scope));
+
+                                $scope.emailuser = false;
+                                $scope.forgotuser = false;
+                                $scope.UserPwd = false;
+                                $scope.GenOtp = true;
+                                $scope.Userdet = false;
+                                $scope.UserPwd = false;
+                                $scope.oneClick = true;
+                                $scope.oneClick1 = false;
+                                $scope.forgotpasswor = false;
+                                $('#otp').removeClass("not-active");
+                                $('.z1').removeClass("step-on");
+                                $('.z1').addClass("step-done");
+                                $('.z2').addClass("step-on");
+                                $('#otp').addClass("on-page");
+                                $('#upin').hide();
+                                $('#upin1').show();
+                                $('#fo-eotp').focus();
+                            }
+                        }
+
+                    }
+                }
+
+            }, function (response) {
+
+            });
+
+        } else {
+            $scope.alertMsgLogin = true;
+            $('#fo-user').focus();
+        }
+
+     
+     $scope.newregclick=function(){				
+	 window.location.href = $scope.servers["GST_REGISTRATION_R1_URL"] + "/registration/";		 
+		
+	}
+     
+    };
+
+    //forgotpass validate OTP
+    $scope.procee = function () {
+        $scope.errorMsg2={};
+        $scope.errorMsg2["login_error"] = false;
+        if ($scope.forgotpass_2.e_otp.$valid && $scope.forgotpass_2.cap.$valid) {
+            $scope.oneClick1 = true;
+            $scope.oneClick = false;
+            var details = {
+
+                otp: $scope.data.e_otp,
+                captcha: $scope.data.captcha
+                
+            };
+
+            var otpDetails = JSON.stringify(details);
+
+            ajax.post("/services/validate/otp", otpDetails, function () {
+                $().blockPage(true);
+            }, function () {
+                $().blockPage(false);
+            }).then(function (response) {
+
+                if (response.message === "true" &&  response.successCode==null) {
+                    if ($scope.forgotpass_2.$setPristine) {
+                        $scope.forgotpass_2.$setPristine();
+                        $scope.oneClick = true;
+                        $scope.oneClick1 = true;
+                        $scope.oneClick2 = false;
+                        $scope.alertMsgLogin = true;
+                        $scope.question = true;
+                        $scope.forgotpasswor = true;
+                        $scope.GenOtp = true;
+                        $scope.Security = false;
+                        $scope.questions = true;
+                        $scope.forgotpasswor = false;
+                        $scope.GenOtp = false;
+                        $scope.Security = false;
+                        $('#otp').hide();
+                        $('#otp1').show();
+                        $('#newc').removeClass('not-active');
+                        $('#newc').addClass('on-page');
+                        $('.z2').removeClass('step-on');
+                        $('.z2').addClass('step-done');
+                        $('.z3').addClass('step-on');
+                        $('#fo-pwd').focus();
+                    }
+					shareData.msg=response.message;
+
+                } else if (response.errorCode === "SWEB_8000") {
+                    if ($scope.forgotpass_2.$setPristine) {
+                        $scope.forgotpass_2.$setPristine();
+                        $scope.data.e_otp = null;
+                        $scope.oneClick1 = false;
+                        $scope.captchaObj.refresh();
+                        $scope.alertMsgLogin = false;
+                        $('#fo-eotp').focus();
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+
+                    }
+                } else if (response.errorCode === "SWEB_9003") {
+                    if ($scope.forgotpass_2.$setPristine) {
+                        $scope.forgotpass_2.$setPristine();
+                        $scope.data.captcha = null;
+                        $scope.captchaObj.refresh();
+                        $scope.data.e_otp = null;
+                        $scope.oneClick1 = false;
+                        $scope.alertMsgLogin = false;
+                        $('#fo-eotp').focus();
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    }
+                } else if (response.errorCode === "SWEB_9021") {
+                    if ($scope.forgotpass_2.$setPristine) {
+                        $scope.forgotpass_2.$setPristine();
+                        $scope.data.e_otp = null;
+                        $scope.oneClick1 = false;
+                        $scope.data.captcha = null;
+                        $scope.captchaObj.refresh();
+                        $scope.alertMsgLogin = false;
+                        $('#fo-eotp').focus();
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                    }
+                }
+				else {
+                         if (response.errorCode === "SWEB_9000") {
+                            $('#fo-captcha1').focus();
+							$scope.oneClick1 = false;
+							$scope.captchaObj.refresh();
+							$scope.alertMsgLogin = false;
+                            $scope.errorMsg1 = "Enter valid letters shown in the image below";
+                        }
+				
+				}
+            }, function (response) {
+
+            });
+        } else {
+            $scope.alertMsgLogin = true;
+        }
+
+
+
+    };
+
+    //Forgot password final submit
+    $scope.savePass = function () {
+        $scope.oneClick = true;
+        var details = {
+            userName: $scope.data.fpusername,
+            NewPassword: $scope.data.password,
+            confirmPassword: $scope.data.repassword,
+			message:shareData.msg
+        };
+
+        var userDetails = JSON.stringify(details);
+        ajax.post("/services/resetpwd", userDetails, function () {
+            $().blockPage(true);
+        }, function () {
+            $().blockPage(false);
+        }).then(function (response) {
+
+            if (response.successCode === "SWEB_9019") {
+                $scope.oneClick = false;
+                $scope.GenOtp = false;
+                $scope.Userdet = false;
+                $scope.question = false;
+                $scope.forgotpasswor = false;
+                $scope.frtpass = false;
+                $scope.alertMsgLogin = false;
+                $('#alertMsg').removeClass('alert-danger');
+                $('#alertMsg').addClass('alert-success');
+                $('#alertMsg').removeClass('err');
+                $window.scrollTo(0, 0);
+                $scope.fp_success = "SWEB_9019";
+                shareData.successCode = "SWEB_9019";
+                $location.path('/login');
+            } else if (response.errorCode === "SWEB_9011") {
+                $scope.alertMsgLogin = false;
+                $scope.oneClick = false;
+                $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                $window.scrollTo(0, 0);
+            } else if (response.errorCode === "SWEB_8000") {
+                $scope.alertMsgLogin = false;
+                $scope.oneClick = false;
+                $('#fo-pwd').focus();
+                $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                $window.scrollTo(0, 0);
+            } else if (response.errorCode === "SWEB_9017") {
+                $scope.alertMsgLogin = false;
+                $scope.oneClick = false;
+                $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                $window.scrollTo(0, 0);
+            } else if (response.errorCode === "SWEB_9029") {
+                $scope.alertMsgLogin = false;
+                $scope.oneClick = false;
+                $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                $window.scrollTo(0, 0);
+            } else if (response.errorCode === "SWEB_9027") {
+                $scope.forgotpass_3.$setPristine();
+                delete $scope.data.password
+                delete $scope.data.repassword;
+                $scope.alertMsgLogin = false;
+                $scope.oneClick = false;
+                $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                $window.scrollTo(0, 0);
+            }else if (response.errorCode === "SWEB_9003") {
+                $scope.forgotpass_3.$setPristine();
+                delete $scope.data.password
+                delete $scope.data.repassword;
+                $scope.alertMsgLogin = false;
+                $scope.oneClick = false;
+                $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                $window.scrollTo(0, 0);
+            }
+
+        }, function (response) {
+
+        });
+
+
+    };
+
+    //forgotpass new pass
+    $scope.secProceed1 = function () {
+        $scope.oneClick = true;
+        $scope.oneClick1 = true;
+        $scope.oneClick2 = false;
+
+        if ($scope.forgotpass_3.pwd.$valid && $scope.forgotpass_3.repwd.$valid) {
+
+            if ($scope.data.password === $scope.data.repassword) {
+                if ($scope.forgotpass_3.$setPristine) {
+                    $scope.forgotpass_3.$setPristine();
+                    $scope.forgotpass_3.$submitted = false;
+
+                    $scope.oneClick = true;
+                    $scope.oneClick1 = true;
+                    $scope.oneClick2 = false;
+                    $scope.GenOtp = false;
+                    $scope.question = true;
+                    $scope.alertMsgLogin = true;
+                    $('#newc').show();
+                    $('#newc1').hide();
+                    $('#city').focus();
+                    $scope.savePass();
+                }
+
+            }
+
+
+        } else {
+            $scope.alertMsgLogin = true;
+            $('#fo-pwd').focus();
+
+        }
+
+
+    };
+
+
+}

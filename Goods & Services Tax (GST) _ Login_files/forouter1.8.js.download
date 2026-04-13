@@ -1,0 +1,1256 @@
+var myApp = angular.module("myApp", ['ngRoute', 'LocalStorageModule', 'ngProgress', 'ngTable', 'ui.bootstrap']);
+myApp.value('version', "1.5");
+myApp.value('servers', true);
+var RouteProviderConfig = function ($routeProvider, $locationProvider) {
+	var usertype = $().getConstant('usertype');
+	var env = $().getConstant('environment') ? $().getConstant('environment') : "";
+	$routeProvider.when('/login', {
+		templateUrl: '/pages/services/userlogin.html',
+		controller: 'loginCtrl',
+		nocache: true,
+		bc: [{
+			n: "Login",
+			u: ""
+		}]
+	}).when('/otpforauth', {
+		templateUrl: '/pages/services/otpforauth.html',
+		controller: 'loginCtrl',
+		nocache: true,
+		bc: [{
+			n: "Login",
+			u: ""
+		}]
+	}).when('/newlogin', {
+		templateUrl: '/pages/services/login.html',
+		controller: 'loginCtrl',
+		nocache: true,
+		bc: [{
+			n: "New User Login",
+			u: ""
+		}]
+	}).when('/createusername', {
+		templateUrl: '/pages/services/login_migratedealer.html',
+		controller: 'migratedDealerCtrl',
+		bc: [{
+			n: "Create Username",
+			u: ""
+		}]
+	}).when('/migrate-create-user', {
+		templateUrl: '/pages/services/login_nonmigratedealer.html',
+		controller: 'nonmigratedDealerCtrl',
+		bc: [{
+			n: "Create Username",
+			u: ""
+		}],
+		deps: ["questions"]
+	}).when('/auth/dashboard', {
+		templateUrl: (usertype == 'TC') ? '/pages/services/dashboardgstp.html' : '/pages/services/dashboard.html',
+		controller: (usertype == 'TC') ? 'tcDashboardCtrl' : 'tpDashboardCtrl',
+		bc: []
+	})
+	.when('/auth/turnover/edit', {
+		templateUrl: '/pages/services/turnoverEditScreen.html',
+		controller: 'tpDashboardCtrl',
+		bc: []
+	})
+	.when('/turnover/acknowledgement', {
+        templateUrl : '/pages/services/acknowledge.html',
+		controller: 'tpDashboardCtrl',
+        bc: []
+        
+    })
+    .when('/acknowledgement', {
+		templateUrl : '/pages/services/mailacknowledge.html',
+		controller: 'searchtptempctrl',
+		nocache: true,
+		 bc: [],
+		deps: []
+	})
+	.when('/auth/fowelcome', {
+		templateUrl: '',
+		controller: '',
+		bc: []
+	}).when('/auth/quicklinks/registration', {
+		templateUrl: '',
+		controller: '',
+		bc: [{
+			n: "Services",
+			u: "services/auth/quicklinks/services"
+		}, {
+			n: "Registration",
+			u: ""
+		}]
+	}).when('/auth/quicklinks/userservices', {
+		templateUrl: '',
+		controller: '',
+		bc: [{
+			n: "Services",
+			u: "services/auth/quicklinks/services"
+		}, {
+			n: "User Services",
+			u: ""
+		}]
+	}).when('/auth/quicklinks/ledgers', {
+		templateUrl: '',
+		controller: '',
+		bc: []
+	}).when('/auth/quicklinks/returns', {
+		templateUrl: '',
+		controller: '',
+		bc: []
+	}).when('/auth/quicklinks/payments', {
+		templateUrl: '',
+		controller: '',
+		bc: []
+	}).when('/auth/quicklinks/refunds', {
+		templateUrl: '',
+		controller: '',
+		bc: []
+	}).when('/auth/quicklinks/services', {
+		templateUrl: '',
+		controller: '',
+		bc: [{
+			n: "Services",
+			u: ""
+		}]
+	}).when('/forgotpassword', {
+		templateUrl: '/pages/services/forgotpwd.html',
+		controller: 'forgotCtrl',
+		bc: [{
+			n: "Login",
+			u: "services/login"
+		}, {
+			n: "Forgot Password",
+			u: ""
+		}],
+		deps: ["questions"]
+	}).when('/forgotusername', {
+		templateUrl: '/pages/services/forgotusrname.html',
+		controller: 'forgotCtrl',
+		bc: [{
+			n: "Login",
+			u: "services/login"
+		}, {
+			n: "Forgot Username",
+			u: ""
+		}],
+		deps: ["questions"]
+	}).when('/auth/mig/dashboard', {
+		templateUrl: '/pages/services/mysavedapp.html',
+		controller: 'menuCtrl',
+		bc: [{
+			n: "My Saved Application",
+			u: ""
+		}]
+	}).when('/logout', {
+		templateUrl: '/pages/services/logout.html',
+		controller: 'loginCtrl',
+		bc: []
+	}).when('/auth/welcome', {
+		bc: [{
+			n: "Dashboard",
+			u: ""
+		}]
+	}).when('/arnstatus', {
+		bc: [{
+			n: "Registration",
+			u: "services/quicklinks/registration"
+		}, {
+			n: "Track Application Status",
+			u: ""
+		}]
+	}).when('/trnDirect', {
+		templateUrl : '/pages/services/trnDirect.html',
+		controller: 'trackArnCtrl',
+		bc: [{
+			n: "Registration",
+			u: "services/quicklinks/registration"
+            }, {
+			n: "Home State GSK selection for Promoter/Director of specific COBs",
+			u: ""
+            }]
+	}).when('/gskAddress', {
+		templateUrl : '/pages/services/gskAddress.html',
+		controller: 'trackArnCtrl',
+		bc: []
+	}).when('/otpValidate', {
+		templateUrl : '/pages/services/verifyOtp.html',
+		controller: 'trackArnCtrl',
+		bc: []
+	}).when('/auth/savedapp', {
+		templateUrl: '/pages/services/mysavedappR1.html',
+		controller: 'mysavedappctrl',
+		bc: [{
+			n: "Services",
+			u: "services/auth/quicklinks/services"
+		}, {
+			n: "User Services",
+			u: "services/auth/quicklinks/userservices"
+		}, {
+			n: "My Saved Applications",
+			u: ""
+		}]
+	}).when('/auth/appstatus', {
+		bc: [{
+			n: "Services",
+			u: "services/auth/quicklinks/services"
+		}, {
+			n: "Registration",
+			u: "services/auth/quicklinks/registration"
+		}, {
+			n: "Track Application Status",
+			u: ""
+		}],
+
+	}).when('/offlineutility', {
+		bc: [{
+			"n": "Downloads",
+			"u": ""
+		}, {
+			"n": "Returns Offline Utility",
+			"u": ""
+		}]
+	}).when('/auth/searchtp', {
+		templateUrl: '/pages/services/searchtaxpayer.html',
+		controller: 'searchtpctrl',
+		bc: [{
+			n: "Search Taxpayer",
+			u: "services/auth/quicklinks/searchtxp"
+		}, {
+			n: "Search by GSTIN/UIN",
+			u: ""
+		}]
+	}).when('/searchtp', {
+		templateUrl: '/pages/services/searchtaxpayer_pre.html',
+		controller: 'searchtpctrl',
+		bc: [{
+			n: "Search Taxpayer",
+			u: "services/quicklinks/searchtxp"
+		}, {
+			n: "Search by GSTIN/UIN",
+			u: ""
+		}]
+	}).when('/searchhsnsac', {
+		templateUrl: '/pages/services/SearchHsnSacPre.html',
+		controller: 'taxPayerDashboardCtrl',
+		bc: [{
+			n: "Services",
+			u: "services/quicklinks/services"
+		}, {
+			n: "User Services",
+			u: "services/quicklinks/userservices"
+		}, {
+			n: "Search HSN Code",
+			u: ""
+		}]
+	}).when('/auth/searchhsnsac', {
+		templateUrl: '/pages/services/SearchHsnSacPre.html',
+		controller: 'taxPayerDashboardCtrl',
+		bc: [{
+			n: "Services",
+			u: "services/auth/quicklinks/services"
+		}, {
+			n: "User Services",
+			u: "services/auth/quicklinks/userservices"
+		}, {
+			n: "Search HSN Code",
+			u: ""
+		}]
+	}).when('/auth/searchsmregtp', {
+		templateUrl: '/pages/services/searchtemptaxpayer.html',
+		controller: 'searchtptempctrl',
+		bc: [ {
+			n: "Search Temporary ID",
+			u: ""
+            }]
+	}).when('/searchsmregtp', {
+		templateUrl: '/pages/services/searchtemptaxpayer_prelogin.html',
+		controller: 'searchtptempctrl',
+		bc: [ {
+			n: "Search Temporary ID",
+			u: ""
+            }]
+	}).when('/auth/submissions', {
+		templateUrl: '/pages/services/viewmysubmission.html',
+		controller: 'taxPayerDashboardCtrl',
+		bc: [{
+			n: "Services",
+			u: "services/auth/quicklinks/services"
+		}, {
+			n: "User Services",
+			u: "services/auth/quicklinks/userservices"
+		}, {
+			n: "View My Submissions",
+			u: ""
+		}]
+	}).when('/contacts', {
+		templateUrl: '/pages/services/contacts.html',
+		controller: 'contactCtrl',
+		bc: [{
+			n: "Services",
+			u: "services/quicklinks/services"
+		}, {
+			n: "User Services",
+			u: "services/quicklinks/userservices"
+		}, {
+			n: "Contacts",
+			u: ""
+		}]
+	}).when('/auth/contacts', {
+		templateUrl: '/pages/services/contactspost.html',
+		controller: 'contactCtrl',
+		bc: [{
+			n: "Services",
+			u: "services/auth/quicklinks/services"
+		}, {
+			n: "User Services",
+			u: "services/auth/quicklinks/userservices"
+		}, {
+			n: "Contacts",
+			u: ""
+		}]
+	}).when('/holiday', {
+		templateUrl: '/pages/services/holidaypre.html',
+		controller: 'holidaylistCtrl',
+		bc: [{
+			n: "Services",
+			u: "services/quicklinks/services"
+		}, {
+			n: "User Services",
+			u: "services/quicklinks/userservices"
+		}, {
+			n: "HolidayList ",
+			u: ""
+		}]
+	}).when('/auth/holiday', {
+		templateUrl: '/pages/services/holidaypost.html',
+		controller: 'postholidaylistCtrl',
+		bc: [{
+			n: "Services",
+			u: "services/auth/quicklinks/services"
+		}, {
+			n: "User Services",
+			u: "services/auth/quicklinks/userservices"
+		}, {
+			n: "HolidayList ",
+			u: ""
+		}]
+	}).when('/acts', {
+		templateUrl: '/pages/services/acts/actscenter.html',
+		controller: 'actsrulesctrl',
+		bc: [{
+			n: "GST Law",
+			u: "services/quicklinks/gstlaw"
+		}, {
+			n: "Acts",
+			u: ""
+		}]
+	}).when('/auth/acts', {
+		templateUrl: '/pages/services/acts/actscenter.html',
+		controller: 'postactsrulesctrl',
+		bc: [{
+			n: "GST Law",
+			u: "services/auth/quicklinks/gstlaw"
+		}, {
+			n: "Acts",
+			u: ""
+		}]
+	}).when('/rules', {
+		templateUrl: '/pages/services/rules/rulescenter.html',
+		controller: 'rulesctrl',
+		bc: [{
+			n: "GST Law",
+			u: "services/quicklinks/gstlaw"
+		}, {
+			n: "Rules",
+			u: ""
+		}]
+	}).when('/auth/rules', {
+		templateUrl: '/pages/services/rules/rulescenter.html',
+		controller: 'postrulesctrl',
+		bc: [{
+			n: "GST Law",
+			u: "services/auth/quicklinks/gstlaw"
+		}, {
+			n: "Rules",
+			u: ""
+		}]
+	}).when('/notifications', {
+		templateUrl: '/pages/services/notifications/notifications.html',
+		controller: 'notificationctrl',
+		bc: [{
+			n: "GST Law",
+			u: "services/quicklinks/gstlaw"
+		}, {
+			n: "Notifications",
+			u: ""
+		}]
+	}).when('/auth/notifications', {
+		templateUrl: '/pages/services/notifications/notifications.html',
+		controller: 'notificationctrlpost',
+		bc: [{
+			n: "GST Law",
+			u: "services/auth/quicklinks/gstlaw"
+		}, {
+			n: "Notifications",
+			u: ""
+		}]
+	}).when('/circulars', {
+		templateUrl: '/pages/services/circulars/circulars.html',
+		controller: 'circularctrl',
+		bc: [{
+			n: "GST Law",
+			u: "services/quicklinks/gstlaw"
+		}, {
+			n: "Circulars",
+			u: ""
+		}]
+	}).when('/auth/circulars', {
+		templateUrl: '/pages/services/circulars/circulars.html',
+		controller: 'circularctrlpost',
+		bc: [{
+			n: "GST Law",
+			u: "services/auth/quicklinks/gstlaw"
+		}, {
+			n: "Circulars",
+			u: ""
+		}]
+	}).when('/amendments', {
+		templateUrl: '/pages/services/amendments/amendments.html',
+		controller: 'amendmentctrl',
+		bc: [{
+			n: "GST Law",
+			u: "services/quicklinks/gstlaw"
+		}, {
+			n: "Amendments",
+			u: ""
+		}]
+	}).when('/auth/amendments', {
+		templateUrl: '/pages/services/amendments/amendments.html',
+		controller: 'amendmentctrlpost',
+		bc: [{
+			n: "GST Law",
+			u: "services/auth/quicklinks/gstlaw"
+		}, {
+			n: "Amendments",
+			u: ""
+		}]
+	}).when('/pressreleases', {
+		templateUrl: '/pages/services/pressreleases/pressreleases.html',
+		controller: 'pressreleasectrl',
+		bc: [{
+			n: "GST Law",
+			u: "services/quicklinks/gstlaw"
+		}, {
+			n: "Press Releases",
+			u: ""
+		}]
+	}).when('/auth/pressreleases', {
+		templateUrl: '/pages/services/pressreleases/pressreleases.html',
+		controller: 'pressreleasectrlpost',
+		bc: [{
+			n: "GST Law",
+			u: "services/auth/quicklinks/gstlaw"
+		}, {
+			n: "Press Releases",
+			u: ""
+		}]
+	}).when('/auth/myprofile', {
+		templateUrl: (usertype == 'TC') ? '/pages/services/viewgstpprofile.html' : '/pages/services/viewuserprofile.html',
+		controller: (usertype == 'TC') ? 'viewgstpctrl' : 'viewuserctrl',
+		bc: [{
+			n: "My Profile",
+			u: ""
+		}]
+
+	}).when('/auth/historyofamendment', {
+		templateUrl: '/pages/services/historyofamendment.html',
+		controller: 'amendmenthistory',
+		bc: [{
+			n: "My Profile",
+			u: "services/auth/myprofile"
+		}, {
+			n: "History of Amendment",
+			u: ""
+		}]
+	}).when('/auth/cancelunregappl', { //CR#28913-B Code changes
+		templateUrl: '/pages/services/cancelunregappl.html',
+		controller: 'cancelunregapplCtrl',
+		bc: [{
+			n: "My Profile",
+			u: "services/auth/myprofile"
+        }, {
+			n: "Cancel Unregistered Applicant",
+			u: ""
+        }]
+	}).when('/auth/notices', {
+		templateUrl: '/pages/services/viewnoticeorder.html',
+		controller: 'viewnoticeorderctrl',
+		bc: [{
+			n: "Services",
+			u: "services/auth/quicklinks/services"
+		}, {
+			n: "User Services",
+			u: "services/auth/quicklinks/userservices"
+		}, {
+			n: "View Notices and Orders",
+			u: ""
+		}]
+	}).when('/locategstp', {
+		templateUrl: '/pages/services/locategstp.html',
+		controller: 'locategstpctrl',
+		bc: [{
+			n: "Services",
+			u: "services/quicklinks/services"
+		},
+		{
+			n: "User Services",
+			u: "services/quicklinks/userservices"
+		},
+		{
+			n: "Locate GST Practitioner (GSTP)",
+			u: ""
+		}]
+	}).when('/auth/locategstp', {
+		templateUrl: '/pages/services/locategstppost.html',
+		controller: 'locategstpctrlpost',
+		bc: [{
+			n: "Services",
+			u: "services/auth/quicklinks/services"
+		},
+		{
+			n: "User Services",
+			u: "services/auth/quicklinks/userservices"
+		},
+		{
+			n: "Locate GST Practitioner (GSTP)",
+			u: ""
+		}]
+	})
+
+		.when('/auth/certs', {
+			bc: [{
+				n: "Services",
+				u: "services/auth/quicklinks/services"
+			}, {
+				n: "User Services",
+				u: "services/auth/quicklinks/userservices"
+			}, {
+				n: "View/Download Certificates",
+				u: ""
+			}]
+		}).when('/auth/mig/certs', {
+			bc: [{
+				n: "View/Download Certificates",
+				u: ""
+			}]
+		}).when('/auth/listoftaxpayer', {
+			templateUrl: '/pages/services/listoftaxpayer.html',
+			controller: 'listoftaxpayerctrl',
+			bc: [{
+				n: "Search Taxpayer",
+				u: "services/auth/quicklinks/searchtxp"
+			}, {
+				n: "Search Composition Taxpayer",
+				u: ""
+			}]
+
+		}).when('/listoftaxpayer', {
+			templateUrl: '/pages/services/listoftaxpayerpre.html',
+			controller: 'listoftaxpayerprectrl',
+			bc: [{
+				n: "Search Taxpayer",
+				u: "services/quicklinks/searchtxp"
+			}, {
+				n: "Search Composition Taxpayer",
+				u: ""
+			}]
+
+		}).when('/grievance', {
+			templateUrl: '/pages/services/grievance/grievancemainpre.html',
+			controller: 'grievanceprectrl',
+			bc: [{
+				n: "Services",
+				u: "services/quicklinks/services"
+			}, {
+				n: "Payments",
+				u: "services/quicklinks/payments"
+			}, {
+				n: "Grievance against Payment(GST PMT-07)",
+				u: ""
+			}]
+
+		}).when('/auth/grievance', {
+			templateUrl: '/pages/services/grievance/grievancemain.html',
+			controller: 'grievancectrl',
+			bc: [{
+				n: "Services",
+				u: "services/auth/quicklinks/services"
+			}, {
+				n: "Payments",
+				u: "services/auth/quicklinks/payments"
+			}, {
+				n: "Grievance against Payment(GST PMT-07)",
+				u: ""
+			}]
+		}).when('/auth/uploadjson', {
+			templateUrl: '/pages/services/uploadjson.html',
+			controller: 'fologinCtrl',
+			bc: []
+		}).when('/auth/restrictupload', {
+			templateUrl: '/pages/services/restrictupload.html',
+			controller: 'fologinCtrl',
+			bc: []
+		}).when('/auth/regoptions', {
+			templateUrl: '/pages/services/regoptions.html',
+			controller: 'fologinCtrl',
+			bc: []
+		}).when('/track-provisional-id-status', {
+			templateUrl: '/pages/services/checktin.html',
+			controller: 'fologinCtrl',
+			nocache: true,
+			bc: [{
+				n: "Search Taxpayer",
+				u: "services/quicklinks/searchtxp"
+			}, {
+				n: "Search Migrated Taxpayer",
+				u: ""
+			}]
+		}).when('/auth/engdisenggstp', {
+			templateUrl: '/pages/services/engagedisengage.html',
+			controller: 'engageDisEngage',
+			bc: [{
+				n: "Services",
+				u: "services/auth/quicklinks/services"
+			}, {
+				n: "User Services",
+				u: "services/auth/quicklinks/userservices"
+			}, {
+				n: "Engage / Disengage GST Practitioner (GSTP)",
+				u: ""
+			}]
+		}).when('/auth/acceptreject', {
+			templateUrl: '/pages/services/acceptreject.html',
+			controller: 'acceptReject',
+			bc: [{
+				n: "Services",
+				u: "services/auth/quicklinks/services"
+			}, {
+				n: "User Services",
+				u: "services/auth/quicklinks/userservices"
+			}, {
+				n: "Accept / Reject Taxpayer",
+				u: ""
+			}]
+		}).when('/auth/verifyformengdiseng', {
+			templateUrl: '/pages/services/verifyformengdiseng.html',
+			controller: 'engageDisEngage',
+			bc: [{
+				n: "Services",
+				u: ""
+			}, {
+				n: "Engage / Disengage GST Practitioner (GSTP)",
+				u: ""
+			}]
+		}).when('/auth/verifyformaptrjct', {
+			templateUrl: '/pages/services/verifyformacptrjct.html',
+			controller: 'acceptReject',
+			bc: [{
+				n: "Services",
+				u: ""
+			}, {
+				n: "Accept / Reject Taxpayer",
+				u: ""
+			}]
+		}).when('/auth/taxpayerlist', {
+			templateUrl: '/pages/services/taxpayerlist.html',
+			controller: 'taxpayerslistctrl',
+			bc: [{
+				n: "Services",
+				u: "services/auth/quicklinks/services"
+			}, {
+				n: "User Services",
+				u: "services/auth/quicklinks/userservices"
+			}, {
+				n: "List of Taxpayer",
+				u: ""
+			}]
+		}).when('/officeaddress', {
+			templateUrl: '/pages/services/officeaddress.html',
+			controller: 'officeAddressCtrl',
+			bc: [{
+				n: "Services",
+				u: "services/quicklinks/services"
+			}, {
+				n: "User Services",
+				u: "services/quicklinks/userservices"
+			}, {
+				n: "Search Office Addresses",
+				u: ""
+			}]
+		}).when('/feedback', {
+			templateUrl: '/pages/services/feedbackpre.html',
+			controller: 'feedbackprectrl',
+			bc: [{
+				n: "Services",
+				u: "services/quicklinks/services"
+			},
+			{
+				n: "User Services",
+				u: "services/quicklinks/userservices"
+			},
+			{
+				n: "Feedback",
+				u: ""
+			}]
+		}).when('/auth/feedbackpost', {
+			templateUrl: '/pages/services/feedbackpost.html',
+			controller: 'feedbackctrl',
+			bc: [{
+				n: "Services",
+				u: "services/quicklinks/services"
+			},
+			{
+				n: "User Services",
+				u: "services/auth/quicklinks/userservices"
+			},
+			{
+				n: "Feedback",
+				u: ""
+			}]
+		}).when('/auth/manageapiaccess', {
+			templateUrl: '/pages/services/manageapiaccess.html',
+			controller: 'manageapiaccessctrl',
+			bc: [{
+				n: "My Profile",
+				u: "services/auth/myprofile"
+			}, {
+				n: "Manage API Access",
+				u: ""
+			}]
+		}).when('/auth/detailedapiaccess/:tabId', {
+			templateUrl: '/pages/services/apiaccessdetail/detailedapiaccess.html',
+			controller: 'detailedapiaccessctrl',
+			bc: [{
+				n: "My Profile",
+				u: "services/auth/myprofile"
+			},{
+				n: "Manage API Access",
+				u: "services/auth/manageapiaccess"
+		     },{
+				n: "API Access Details",
+				u: ""
+			}]
+		}).when('/oidarregistration', {
+			templateUrl: '/pages/services/oidar/oidarregistration.html',
+			controller: 'oidarCtrl',
+			nocache: true,
+			bc: [{
+				n: "Registration",
+				u: ""
+			}]
+		}).when('/auth/oidarotpverification', {
+			templateUrl: '/pages/services/oidar/oidarotpverify.html',
+			controller: 'oidarCtrl',
+			nocache: true,
+			bc: [{
+				n: "Registration",
+				u: "services/newlogin"
+			}, {
+				n: "Otp Verification",
+				u: ""
+			}]
+		}).when('/auth/createoidaruser', {
+			templateUrl: '/pages/services/oidar/createoidaruser.html',
+			controller: 'oidarCtrl',
+			nocache: true,
+			deps: [],
+			bc: [{
+				n: "Registration",
+				u: "services/newlogin"
+			}, {
+				n: "Create User ",
+				u: ""
+			}]
+		}).when('/oidarusercreated', {
+			templateUrl: '/pages/services/oidar/oidarusersuccess.html'
+		}).when('/auth/uinotpverification', {
+			templateUrl: '/pages/services/uin/verifyuinotp.html',
+			controller: 'uinCtrl',
+			nocache: true,
+			bc: [{
+				n: "Registration",
+				u: "services/newlogin"
+			}, {
+				n: "Otp Verification",
+				u: ""
+			}]
+		}).when('/auth/createuinuser', {
+			templateUrl: '/pages/services/uin/createuinuser.html',
+			controller: 'uinCtrl',
+			nocache: true,
+			deps: [],
+			bc: [{
+				n: "Registration",
+				u: "services/newlogin"
+			}, {
+				n: "Otp Verification",
+				u: ""
+			}, {
+				n: "Create User ",
+				u: ""
+			}]
+		}).when('/uinusercreated', {
+			templateUrl: '/pages/services/uin/uincreateusersuccess.html'
+		}).when('/ewaybill/ewaybillsystem', {
+			templateUrl: '',
+			controller: '',
+			bc: []
+		}).when('/auth/searchtpbypan', {
+			templateUrl: '/pages/services/searchtaxpayerbypanpost.html',
+			controller: 'searchtpctrlbypan',
+			bc: [{
+				n: "Search Taxpayer",
+				u: "services/auth/quicklinks/searchtxp"
+			}, {
+				n: "Search by PAN",
+				u: ""
+			}]
+		}).when('/searchtpbypan', {
+			templateUrl: '/pages/services/searchtaxpayerbypan.html',
+			controller: 'searchtpctrlbypan',
+			bc: [{
+				n: "Search Taxpayer",
+				u: "services/quicklinks/searchtxp"
+			}, {
+				n: "Search by PAN",
+				u: ""
+			}]
+		}).when('/sitemap', {
+			templateUrl: '/pages/common/sitemap.html',
+			controller: 'sitemapctrl',
+			bc: [{
+				n: "Help and Taxpayer Facilities",
+				u: "services/HelpandTaxpayer/HelpandTaxpayerfacilities"
+			}, {
+				n: "Site Map",
+				u: ""
+			}]
+		}).when('/auth/sitemap', {
+			templateUrl: '/pages/common/sitemappost.html',
+			controller: 'sitemapctrl',
+			bc: [{
+				n: "Help and Taxpayer Facilities",
+				u: "services/HelpandTaxpayer/HelpandTaxpayerfacilities"
+			}, {
+				n: "Site Map",
+				u: ""
+			}]
+		}).when('/auth/msmeSoftware', {
+			templateUrl: '/pages/services/msmeSoftwareDetails.html',
+			controller: 'msmeSoftware',
+			bc: [{
+				n: "Accounting And Billing Software",
+				u: ""
+			}]
+		}).when('/errorDescription', {
+			templateUrl: '/pages/services/errorDescription.html',
+			controller: 'errorDescription',
+			bc: [{
+				n: "Help and Taxpayer Facilities",
+				u: "services/HelpandTaxpayer/HelpandTaxpayerfacilities"
+			}, {
+				n: "GST Portal - Common Errors & Suggested Solutions",
+				u: ""
+			}]
+		}).when('/auth/viewallalerts', {
+			templateUrl: '/pages/services/viewallalerts.html',
+			controller: 'alertCtrl',
+			bc: [{
+				n: "Alerts",
+				u: ""
+			}]
+		}).when('/grievanceNodalOfficer', {
+			templateUrl: '/pages/services/grievanceNodalOfficer.html',
+			controller: 'girevanceNodalOfficer',
+
+			bc: [{
+				n: "Help and Taxpayer Facilities",
+				u: "services/HelpandTaxpayer/HelpandTaxpayerfacilities"
+			}, {
+				n: "Grievance Nodal Officers",
+				u: ""
+			}]
+		}).when('/advisory/advisoryandreleases', {
+			templateUrl: '/pages/services/advisories.html',
+			controller: 'advisories',
+			bc: [{
+				n: "News and Updates",
+				u: ""
+			}]
+		}).when('/HelpandTaxpayer/HelpandTaxpayerfacilities', {
+			templateUrl: '/pages/services/HelpandTaxpayerfacilities.html',
+			controller: 'sitemapctrl',
+			bc: [{
+				n: "Help and Taxpayer Facilities",
+				u: ""
+			}]
+		}).when('/allAdvisories', {
+			templateUrl: '/pages/services/allAdvisories.html',
+			controller: 'advisories',
+			bc: [{
+				n: "News and Updates",
+				u: "services/advisory/advisoryandreleases"
+			}, {
+				n : "Archives",
+				u : ""
+			}]
+		}).when('/press/pressReleases', {
+			templateUrl: '/pages/services/pressReleases.html',
+
+			controller: 'advisories',
+			bc: [{
+					n : "Help and Taxpayer Facilities",
+					u : "services/HelpandTaxpayer/HelpandTaxpayerfacilities"
+				},{
+				n: "Press Releases",
+				u: ""
+			}]
+		}).when('/advisoryandreleases/read/:readId', {
+			templateUrl: '/pages/services/advpressreader.html',
+			controller: 'advisories',
+			bc: [{
+				n: "News and Updates",
+				u: ""
+			}]
+		}).when('/trackstatus', {
+			templateUrl: '/pages/services/trackApplicationStatus.html',
+			controller: 'trackApplicationStatus',
+
+			bc: [{
+				n: "Services",
+				u: "services/quicklinks/services"
+			}, {
+				n: "Track Application Status",
+				u: ""
+			}]
+
+
+		})
+		.when('/auth/trackstatus', {
+			templateUrl: '/pages/services/postTrackApplicationStatus.html',
+			controller: 'posttrackApplicationStatus',
+
+			bc: [{
+				n: "Services",
+				u: "services/auth/quicklinks/services"
+			}, {
+				n: "Track Application Status",
+				u: ""
+			}]
+
+		})
+		.when('/auth/trackstatus/trn', {
+			templateUrl: '/pages/services/trnTrackApplicationStatus.html',
+			controller: 'trntrackApplicationStatus',
+
+			bc: [{
+				n: "Services",
+				u: "services/quicklinks/services/trn"
+			}, {
+				n: "Track Application Status",
+				u: ""
+			}]
+
+		}).when('/auth/aadhaarstatus', {
+			templateUrl: '/pages/services/adhrsts.html',
+			controller: 'adhrstsctrl',
+			nocache: true,
+			bc: [{
+				n: "My Profile",
+				u: "services/auth/myprofile"
+			}, {
+				n: "Aadhaar Authentication Status",
+				u: ""
+			}]
+			}).when('/auth/corebussts',{
+				templateUrl:'/pages/services/corebussts.html',
+				controller: 'corebusstsctrl',
+				nocache : true,
+				bc :[{
+					n: "My Profile",
+					u: "services/auth/myprofile"
+				},{
+					n:"Core Business Activity Status",
+					u:""}]
+			}).when('/auth/bankaccvalidstatus',{
+					templateUrl:'/pages/services/bnkAccountStatus.html',
+					controller: 'bnkAccountStatus',
+					nocache : true,
+					bc :[{
+						n: "My Profile",
+						u: "services/auth/myprofile"
+					},{
+						n:"Bank Account Status",
+						u:""}]
+			}).when('/auth/stak/reg',{
+				templateUrl:'/pages/services/stakReg.html',
+				controller: 'stakRegCtrl',
+				nocache : true,
+				bc :[{
+					n: "My Profile",
+					u: "services/auth/myprofile"
+				},{
+					n:"Activate/ Deactivate STAK",
+					u:""}]
+			
+				}).when('/auth/gta', {
+					templateUrl: '/pages/services/gtaFiling/gtaFilingOptions.html',
+					controller: 'gtaAnnexureCtrl',
+					bc :[{
+						n : "Services",
+						u : "services/quicklinks/services"
+					},{
+						n: "User Services",
+						u: "services/auth/quicklinks/userservices"
+					},
+					{
+						n : "GTA (Goods Transport Agencies)",
+						u : ""
+					}]
+				}).when('/auth/gtaAnnexure', {
+					templateUrl: '/pages/services/gtaFiling/gtaAnnexure.html',
+					controller: 'gtaAnnexureCtrl',
+					bc :[{
+						n : "Services",
+						u : "services/quicklinks/services"
+					},{
+						n: "User Services",
+						u: "services/auth/quicklinks/userservices"
+					}, {
+						n: "GTA",
+						u: "services/auth/gta"
+					}, {
+						n: "Opting Forward Charge Payment by GTA (Annexure V)",
+						u: ""
+					}]
+				}).when('/auth/gtaAnnexure/verify', {
+					templateUrl: '/pages/services/gtaFiling/gtaAnnexureVerification.html',
+					controller: 'gtaAnnexureCtrl',
+					bc :[{
+						n : "Services",
+						u : "services/quicklinks/services"
+					},{
+						n: "User Services",
+						u: "services/auth/quicklinks/userservices"
+					},{
+						n: "GTA",
+						u: "services/auth/gta"
+					}, {
+					n: "Opting Forward Charge Payment by GTA (Annexure V)",
+						u: ""
+					}]
+				}).when('/auth/gtaAnnexure/acknowledge', {
+					templateUrl: '/pages/services/gtaFiling/gtaAcknowledgement.html',
+					controller: 'gtaAnnexureCtrl',
+					bc :[{
+						n : "Services",
+						u : "services/quicklinks/services"
+					},{
+						n: "User Services",
+						u: "services/auth/quicklinks/userservices"
+					}, {
+						n: "GTA",
+						u: "services/auth/gta"
+					},{
+						n: "Opting Forward Charge Payment by GTA (Annexure V)",
+						u: "services/auth/gtaAnnexure"
+					},
+					{
+						n : "Acknowledgement",
+						u : ""
+					}]
+				}).when('/auth/gtaAnnexureVI', {
+					templateUrl: '/pages/services/gtaFiling/gtaAnnexure.html',
+					controller: 'gtaAnnexureCtrl',
+					bc :[{
+						n : "Services",
+						u : "services/quicklinks/services"
+					},{
+						n: "User Services",
+						u: "services/auth/quicklinks/userservices"
+					}, {
+						n: "GTA",
+						u: "services/auth/gta"
+					},{
+						n: "Opting to Revert Under Reverse Charge Payment by GTA (Annexure VI)",
+						u: ""
+					}]
+				}).when('/auth/gtaAnnexureVI/verify', {
+					templateUrl: '/pages/services/gtaFiling/gtaAnnexureVerification.html',
+					controller: 'gtaAnnexureCtrl',
+					bc :[{
+						n : "Services",
+						u : "services/quicklinks/services"
+					},{
+						n: "User Services",
+						u: "services/auth/quicklinks/userservices"
+					},{
+						n: "GTA",
+						u: "services/auth/gta"
+					}, {
+						n: "Opting to Revert Under Reverse Charge Payment by GTA (Annexure VI)",
+						u: "services/auth/gtaAnnexureVI"
+					}, {
+						n: "Verify",
+						u: ""
+					}]
+				}).when('/auth/gtaAnnexureVI/acknowledge', {
+					templateUrl: '/pages/services/gtaFiling/gtaAcknowledgement.html',
+					controller: 'gtaAnnexureCtrl',
+					bc :[{
+						n : "Services",
+						u : "services/quicklinks/services"
+					},{
+						n: "User Services",
+						u: "services/auth/quicklinks/userservices"
+					}, {
+						n: "GTA",
+						u: "services/auth/gta"
+					},{
+						n: "Opting to Revert Under Reverse Charge Payment by GTA (Annexure VI)",
+						u: "services/auth/gtaAnnexureVI"
+					}, {
+						n: "Acknowledgement",
+						u: ""
+					}]
+				}).when('/auth/gtaUpload', {
+					templateUrl: '/pages/services/gtaFiling/uploadAnnexure.html',
+					controller: 'gtaManualUploadCtrl',
+					bc :[{
+						n : "Services",
+						u : "services/quicklinks/services"
+					},{
+						n: "User Services",
+						u: "services/auth/quicklinks/userservices"
+					},{
+						n: "GTA",
+						u: "services/auth/gta"
+					}, {
+						n: "Upload Manually Filed Annexure V Form",
+						u: ""
+				}]
+			}).when('/auth/verifyRfn', {
+				templateUrl: '/pages/services/verifyRfn/verifyRfn.html',
+				controller: 'verifyRfnCtrl',
+				bc :[{
+					n : "Services",
+					u : "services/auth/quicklinks/services"
+				},{
+					n: "User Services",
+					u: "services/auth/quicklinks/userservices"
+				},
+				{
+					n : "Verify RFN",
+					u : ""
+					
+				}]
+			}).when('/verifyRfn', {
+				templateUrl: '/pages/services/verifyRfn/verifyRfn.html',
+				controller: 'verifyRfnCtrl',
+				bc :[{
+					n : "Services",
+					u : "services/auth/quicklinks/services"
+				},{
+					n: "User Services",
+					u: "services/auth/quicklinks/userservices"
+				},
+				{
+					n : "Verify RFN",
+					u : ""
+					
+				}]
+			}).when('/auth/eidsturnovertable', {
+				templateUrl: '/pages/services/eidsturnovertable/eidsturnovertable.html',
+				controller: 'eidsturnovertablectrl',
+				bc: [{
+					"n": "Services",
+					"u": "services/auth/quicklinks/services"
+				}, {
+					"n": "User Services",
+					"u": "services/auth/quicklinks/userservices"
+				}, {
+					"n": "View turnover of enrolment IDs",
+					"u": ""
+				}]
+			}).when('/auth/eidsturnoverdetails', {
+				templateUrl: '/pages/services/eidsturnovertable/eidsturnoverdetails.html',
+				controller: 'eidsturnovertablectrl',
+				bc: [{
+					"n": "Services",
+					"u": "services/auth/quicklinks/services"
+				}, {
+					"n": "User Services",
+					"u": "services/auth/quicklinks/userservices"
+				}, {
+					"n": "View turnover of enrolment IDs",
+					"u": ""
+				}]
+			}).when('/auth/suppliesbyecodetails', {
+				templateUrl: '/pages/services/suppliesbyeco/suppliesbyecoperiod.html',
+				controller: 'suppliesbyecoctrl',
+				bc: [{
+					"n": "Services",
+					"u": "services/auth/quicklinks/services"
+				}, {
+					"n": "User Services",
+					"u": "services/auth/quicklinks/userservices"
+				}, {
+					"n": "Supplies reported by ECOs and Annual Turnover details ",
+					"u": ""
+				}]
+			}).when('/auth/suppliesbyecodetails/orgsuptable', {
+				templateUrl: '/pages/services/suppliesbyeco/orgsuptable.html',
+				controller: 'orgsupctrl',
+				bc: [{
+					"n": "Services",
+					"u": "services/auth/quicklinks/services"
+				}, {
+					"n": "User Services",
+					"u": "services/auth/quicklinks/userservices"
+				}, {
+					"n": "Supplies Reported by ECOs ",
+					"u": ""
+				}]
+			}).when('/auth/suppliesbyecodetails/amdsuptable', {
+				templateUrl: '/pages/services/suppliesbyeco/amdsuptable.html',
+				controller: 'amdsupctrl',
+				bc: [{
+					"n": "Services",
+					"u": "services/auth/quicklinks/services"
+				}, {
+					"n": "User Services",
+					"u": "services/auth/quicklinks/userservices"
+				}, {
+					"n": "Supplies Reported by ECOs ",
+					"u": ""
+				}]
+			}).when('/auth/suppliesbyecodetails/annualturnover', {
+				templateUrl: '/pages/services/suppliesbyeco/annualturnover.html',
+				controller: 'annualturnoverctrl',
+				bc: [{
+					"n": "Services",
+					"u": "services/auth/quicklinks/services"
+				}, {
+					"n": "User Services",
+					"u": "services/auth/quicklinks/userservices"
+				}, {
+					"n": "Annual turnover",
+					"u": ""
+				}]
+			});
+
+
+
+	$locationProvider.html5Mode(true);
+};

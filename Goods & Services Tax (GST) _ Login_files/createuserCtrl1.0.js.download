@@ -1,0 +1,1205 @@
+/*jslint browser: true*/
+/*global $, jQuery, angular, myApp, fologinCtrl, $val*/
+"use strict";
+myApp.controller("nonmigratedDealerCtrl", nonmigratedDealerCtrl);
+myApp.controller("migratedDealerCtrl", migratedDealerCtrl);
+myApp.controller("oidarCtrl", oidarCtrl);
+myApp.controller("uinCtrl", uinCtrl);
+
+nonmigratedDealerCtrl.$inject = ['$scope', 'cache', '$rootScope', 'shareData', '$location', 'ajax', '$route', 'version', '$window', '$timeout', '$templateCache', '$log', 'utilFunctions', 'validations', '$compile'];
+
+
+function nonmigratedDealerCtrl($scope, cache, $rootScope, shareData, $location, ajax, $route, version, $window, $timeout, $templateCache, $log, utilFunctions, validations, $compile) {
+	/* init controller */
+	utilFunctions.initCache();
+	$scope.servers = $().getServers();
+	$scope.trans = utilFunctions.initLanguage('services');
+	$rootScope.$on("LangChanged", function(event, mass) {
+		$scope.trans = utilFunctions.initLanguage('services');
+	});
+	$scope.$on('$viewContentLoaded', function() {
+		$window.scrollTo(0, 0);
+		angular.element(document.querySelector('[autofocus]')).focus();
+	});
+	/*init completed*/
+	$scope.UserDetails = true;
+	$scope.alertMsgLogin = true;
+	$scope.validations = validations;
+	$scope.oneClick = false;
+	$scope.migratehide= true;
+ 	$scope.errors = {};
+	
+	
+    
+    /* services code */
+    $scope.setPristine = function(form, ele, prop) {
+        $scope[form][ele].$setValidity(prop, true);
+    }
+    
+    
+   var patterns = {};
+    patterns.username = /^([a-zA-Z0-9\_\-\.]){8,15}$/;
+    patterns.uppercase = /[A-Z]/;
+    patterns.lowercase = /[a-z]/;
+    patterns.number = /[0-9]/;
+    patterns.symbol = /[\@\!\#\%\^\$\&\`\*\-\_\+]+/;
+    patterns.pwd = /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*^[a-zA-Z0-9\@\!\#\%\^\$\&\`\*\-\_\+]*$).{8,15}/;
+    $(".password-helper").keyup(function() {
+        var val = $(this).val();
+        if (val.length > 7) {
+            $(this).parent().find(".minlength").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".minlength").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".minlength").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".minlength").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.uppercase.test(val)) {
+            $(this).parent().find(".upperChar").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".upperChar").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".upperChar").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".upperChar").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.lowercase.test(val)) {
+            $(this).parent().find(".lowerChar").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".lowerChar").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".lowerChar").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".lowerChar").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.number.test(val)) {
+            $(this).parent().find(".numberic").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".numberic").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".numberic").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".numberic").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.symbol.test(val)) {
+            $(this).parent().find(".symbol").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".symbol").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".symbol").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".symbol").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.pwd.test(val)) {
+            $(this).parent().find(".validpwd").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".validpwd").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".validpwd").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".validpwd").parent().addClass("text-danger").removeClass("text-success");
+        }
+    });
+    
+    
+   
+//$scope.securityQ = false;    
+    
+    
+    //non-migrate createuser cred submit
+ $scope.securityTab = function() {
+$scope.errors["createuser"] = false;
+        if ($scope.userDet.gstUser.$valid && $scope.userDet.userCred.$valid && $scope.userDet.retype.$valid) {
+            if ($scope.cu.uPassword === $scope.cu.repassword) {
+                var userDetails = {
+                    NewUsername: $scope.cu.user,
+                    Password: $scope.cu.uPassword
+
+                }
+                var userNameDetails = JSON.stringify(userDetails);
+
+                ajax.post("/services/auth/check/username", userNameDetails).then(function(response) {
+
+                    //$log.debug(response);
+
+
+                    if (response.message === "true") {
+                        $scope.oneClick = false;
+                       // $scope.securityQ = true;
+                        $scope.UserDetails = true;
+                        $('#sec').removeClass('not-active');
+                        $('#sec').addClass('on-page');
+                        $('#newc').show();
+                        /* $('#newc1').show();
+                        $('#newc1').removeClass('on-page'); */
+                        $('.z3').addClass('step-on');
+                       /*  $('.z3').addClass('step-done');
+                        $('.z4').addClass('step-on'); */
+                      
+                        $scope.alertMsgLogin = true;
+						$scope.cusubmit();
+
+
+
+                    }
+                    
+                    else {
+                    if (response && response.errorCode) {
+                        
+                       
+                        delete $scope.cu.uPassword;
+                        delete $scope.cu.repassword;
+                        $("#pwd1").focus();
+
+                        switch (response.errorCode) {
+                          
+                               
+                            case "SWEB_9010":
+                                //"Username should be of 8 to 15 characters (where the minimum length is 8 characters and maximum length is 15 characters)" + "which should start with an alphabet, can be contain alphabets, numbers and special characters (dot [.] or underscore  [_] or hyphen [-])";
+                               
+                              
+                            case "SWEB_9011":
+                                //"Password should be of 8 to 15 characters (where the minimum length is 8 characters and maximum length is 15 characters) " + "which should comprise of at least one number, special character " + "and letters( at least one upper and lower case)";
+                              
+                                
+                            case "SWEB_9030":
+                                //The username entered matches the pattern of PAN. Kindly choose a different username"
+                               
+                            case "SWEB_9021":
+                                //Session expired. Kindly Login again.";
+                              
+                                
+                            case "SWEB_9009":
+                                //Username already exists. Kindly choose another username.";
+                               
+                            case "SWEB_8000":
+                            case "false":
+                            case false:
+                               
+                                //System error	
+                                
+                                $scope.errors["createuser"] = true;
+                                $scope.userDet.$setPristine();
+
+                                $scope.errors["createuser_desc"] = $scope.trans["ERR_" + response.errorCode];
+                                break;
+                        }
+                    } else {
+                        $scope.errors["createuser"] = true;
+                        $scope.errors["createuser_desc"] = $scope.trans["ERR_SWEB_8000"];
+                    }
+                    if ($scope.errors["createuser"] && $scope.errors["createuser_desc"] != "") {
+                        var alert_dlg = utilFunctions.createAlert({
+                            "title": "",
+                            "type": "danger",
+                            "message": $scope.errors["createuser_desc"]
+                        });
+                        $('[name=errContainer]').empty().append($compile(alert_dlg)($scope));
+                    }
+                }
+
+
+                }, function(response) {
+                    $log.debug(response);
+                })
+
+            }
+        } else {
+            $scope.alertMsgLogin = true;
+        }
+
+    };
+    
+   // console.log($scope.ques);
+     var security;
+  $scope.cusubmit = function() {
+
+        if ($scope.userDet.$valid ) {
+
+
+            $scope.oneClick = false;
+
+            
+            var userDetails = {
+                NewUsername: $scope.cu.user,
+                Password: $scope.cu.uPassword,
+				email: $scope.cu.email,
+                mobileNo: $scope.cu.Phone
+
+            };
+           
+
+
+            var userDetails1 = JSON.stringify(userDetails);
+   
+
+            ajax.post("/services/auth/create/username", userDetails1, function () {
+                    $().blockPage(true);
+                }, function () {
+                    $().blockPage(false);
+                
+                }).then(function(response) {
+               
+                if (response.url === "/auth/logout" && response.successCode==="SWEB_9015") {
+                    $scope.alertMsgLogin = true;
+                    $window.location.href = "login?usrcr=1";
+
+                }
+                else if (response.errorCode === "428") {
+                    $scope.alertMsgLogin = true;
+                    $window.location.href = "/services/error/dataerror";
+
+
+
+                }
+                else if (response.errorCode === "SWEB_9021") {
+                    if ($scope.userDet.$setPristine) {
+                        $scope.userDet.$setPristine();
+                        $scope.oneClick = false;
+                        $scope.alertMsgLogin = false;
+                        $scope.login = false;
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];;
+                        $window.scrollTo(0, 0);
+                    }
+                }
+                else if (response.message === null) {
+                    
+                    if ($scope.userDet.$setPristine) {
+                        $scope.userDet.$setPristine();
+                        $scope.oneClick = false;
+                        $scope.alertMsgLogin = false;
+                        $scope.login = false;
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];;
+                        $window.scrollTo(0, 0);
+                    }
+                } 
+                if (response.errorCode === "SWEB_9009") {
+                    if ($scope.userDet.$setPristine) {
+                        $scope.userDet.$setPristine();
+
+                        $scope.oneClick = false;
+                        $scope.alertMsgLogin = false;
+                        $scope.login = false;
+                        $('#otp').hide();
+                        $('#otp1').show();
+                        $('.z2').removeClass("step-on");
+                        $('.z2').addClass("step-done");
+                        $('#newc').show();
+                       /*  $('#newc1').hide();
+                        $('.z3').removeClass("step-done"); */
+                        $('.z3').addClass("step-on");
+                        /* $('#newc').addClass('on-page');
+                        $('#newc').removeClass('not-active'); */
+
+                        $scope.focus($('#uname'));
+                        $scope.cu.uPassword = null;
+                        $scope.cu.repassword = null;
+                        //$scope.securityQ = false;
+                        $scope.UserDetails = true;
+                        $scope.GenOtp = false;
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+
+                        $window.scrollTo(0, 0);
+
+                    }
+                } else if (response.errorCode === "SWEB_8000") {
+                    if ($scope.userDet.$setPristine) {
+                        $scope.userDet.$setPristine();
+                        $scope.oneClick = false;
+                        $scope.alertMsgLogin = false;
+                        $scope.login = false;
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                        $window.scrollTo(0, 0);
+                    }
+                } else if(response.errorCode && response.successCode==!("SWEB_9015")) {
+                        if ($scope.userDet.$setPristine) {
+                            $scope.userDet.$setPristine();
+                            $scope.cu.uPassword = null;
+                            $scope.alertMsgLogin = false;
+                            $scope.login = false;
+                            $scope.errorMsg1 = $scope.trans["ERR_SWEB_8000"];
+                            $window.scrollTo(0, 0);
+                        }
+                    }
+ 
+
+            }, function(response) {
+				$scope.alertMsgLogin = true;
+            })
+
+
+        } else {
+            $scope.alertMsgLogin = true;
+        }
+    }  
+   
+}
+
+
+
+migratedDealerCtrl.$inject = ['$scope', 'cache', '$rootScope', 'shareData', '$location', 'ajax', '$route', 'version', '$window', '$timeout', '$templateCache', '$log', 'utilFunctions', 'validations', '$compile'];
+
+function migratedDealerCtrl($scope, cache, $rootScope, shareData, $location, ajax, $route, version, $window, $timeout, $templateCache, $log, utilFunctions, validations, $compile) {
+	
+	/* init controller */
+	utilFunctions.initCache();
+	$scope.servers = $().getServers();
+	$scope.trans = utilFunctions.initLanguage('services');
+	$rootScope.$on("LangChanged", function(event, mass) {
+		$scope.trans = utilFunctions.initLanguage('services');
+	});
+	$scope.$on('$viewContentLoaded', function() {
+		$window.scrollTo(0, 0);
+		angular.element(document.querySelector('[autofocus]')).focus();
+	});
+	/*init completed*/
+	
+   var patterns = {}; 
+    $scope.validations = validations;
+    $scope.emailCk = true;
+    $scope.alertMsgLogin = true;
+    $scope.oneClick = false;
+    $scope.migratehide = true;
+    $scope.errors = {};
+   
+    patterns.username = $scope.validations.formats.pwdtooltip_user;
+    patterns.uppercase = $scope.validations.formats.pwdtooltip_uppercase;
+    patterns.lowercase = $scope.validations.formats.pwdtooltip_lowercase;
+    patterns.number = $scope.validations.formats.pwdtooltip_num;
+    patterns.symbol = $scope.validations.formats.pwdtooltip_symbol;
+    patterns.pwd = $scope.validations.formats.pwdtooltip_pwd;
+    $(".password-helper").keyup(function() {
+        var val = $(this).val();
+        if (val.length > 7) {
+            $(this).parent().find(".minlength").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".minlength").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".minlength").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".minlength").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.uppercase.test(val)) {
+            $(this).parent().find(".upperChar").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".upperChar").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".upperChar").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".upperChar").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.lowercase.test(val)) {
+            $(this).parent().find(".lowerChar").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".lowerChar").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".lowerChar").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".lowerChar").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.number.test(val)) {
+            $(this).parent().find(".numberic").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".numberic").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".numberic").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".numberic").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.symbol.test(val)) {
+            $(this).parent().find(".symbol").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".symbol").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".symbol").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".symbol").parent().addClass("text-danger").removeClass("text-success");
+        }
+        if (patterns.pwd.test(val)) {
+            $(this).parent().find(".validpwd").removeClass("fa-times").addClass("fa-check");
+            $(this).parent().find(".validpwd").parent().removeClass("text-danger").addClass("text-success");
+        } else {
+            $(this).parent().find(".validpwd").addClass("fa-times").removeClass("fa-check");
+            $(this).parent().find(".validpwd").parent().addClass("text-danger").removeClass("text-success");
+        }
+    });
+    
+   
+    
+    /* services code */
+    $scope.setPristine = function(form, ele, prop) {
+        $scope[form][ele].$setValidity(prop, true);
+    }
+
+    //createusername generate OTP
+     $scope.genOtp = function() {
+
+
+        if ($scope.emailck.userEmail.$valid && $scope.emailck.userMobile.$valid) {
+
+            var emailmobile = {
+
+                email: $scope.cu.email,
+                mobileNo: $scope.cu.Phone
+            }
+
+            ajax.post("/services/request/otp/migrateddealer", emailmobile).then(function(response) {
+                $log.debug(response);
+                if (response.errorCode === "SWEB_9004") {
+                    $scope.alertMsgLogin = false;
+                    $scope.oneClick = false;
+
+                    $scope.errorMsg1 = "Please enter a valid email address";
+                } else if (response.errorCode === "SWEB_9005") {
+                    $scope.alertMsgLogin = false;
+                    $scope.oneClick = false;
+                    $scope.errorMsg1 = "Please enter a valid mobile number.";
+                } else if (response.message === "true") {
+                    $scope.GenOtp = true;
+
+                    $scope.emailCk = false;
+
+                    $scope.otperror = false;
+                } else if (response.message === "false") {
+                    $scope.alertMsgLogin = false;
+                    $scope.oneClick = false;
+                    $scope.errorMsg1 = "OTP is not generated. Kindly click on Continue to regenerate OTP";
+                } else if (response.errorCode === "SWEB_9021") {
+                    $scope.alertMsgLogin = false;
+                    $scope.oneClick = false;
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                } else if (response.errorCode === "SWEB_8000") {
+                    $scope.alertMsgLogin = false;
+                    $scope.oneClick = false;
+                    $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                }
+
+
+            }, function(response) {
+                $log.debug(response);
+            })
+
+        } else {
+            $scope.alertMsgLogin = true;
+            $('#email').focus();
+
+        }
+
+    }
+     
+     
+     //createusername validateOTP
+     $scope.proceed = function() {
+
+        if ($scope.OtpCk.$valid) {
+            $scope.oneClick = true;
+
+            var otps = {
+                email: $scope.cu.email,
+                mobileNo: $scope.cu.Phone,
+                emailOtp: $scope.cu.mailotp,
+                smsOtp: $scope.cu.smsotp
+            }
+
+            ajax.post("/services/validate/migrateddealer/otp", otps).then(function(response) {
+
+                $log.debug(response);
+                if (response.message == "Y") {
+                    $scope.oneClick = false;
+                    $('#otp').hide();
+                    $('#otp1').show();
+                    $('.z2').removeClass("step-on");
+                    $('.z2').addClass("step-done");
+                    $scope.alertMsgLogin = true;
+                    $('.z3').addClass("step-on");
+                    $('#newc').addClass('on-page');
+                    $('#newc').removeClass('not-active');
+                    $scope.UserDetails = true;
+                    $scope.GenOtp = false;
+                } else if (response.message == null && response.errorCode == "SWEB_9003") {
+                    if ($scope.OtpCk.$setPristine) {
+                        $scope.OtpCk.$setPristine();
+
+                        $scope.oneClick = false;
+                        $scope.cu.smsotp = null;
+                        $scope.cu.mailotp = null;
+                        $scope.alertMsgLogin = false;
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                        //$scope.otperror = true;
+                    }
+
+                } else if (response.message == null && response.errorCode == "SWEB_8000") {
+                    if ($scope.OtpCk.$setPristine) {
+                        $scope.OtpCk.$setPristine();
+
+                        $scope.oneClick = false;
+                        $scope.cu.smsotp = null;
+                        $scope.cu.mailotp = null;
+                        $scope.alertMsgLogin = false;
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                        $scope.otperror = false;
+                    }
+
+                } else if (response.message == null && response.errorCode == "SWEB_9021") {
+                    if ($scope.OtpCk.$setPristine) {
+                        $scope.OtpCk.$setPristine();
+
+                        $scope.oneClick = false;
+                        $scope.cu.smsotp = null;
+                        $scope.cu.mailotp = null;
+                        $scope.alertMsgLogin = false;
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                        $scope.otperror = false;
+                    }
+
+                }
+            }, function(response) {
+                $log.debug(response);
+            });
+        } else {
+            $scope.alertMsgLogin = true;
+        }
+
+    }
+     
+     //createusername resendOTP
+      $scope.resend = function() {
+
+        $scope.cu.mailotp = null;
+        $scope.cu.smsotp = null;
+        $scope.genOtp();
+        $scope.alertMsgLogin = true;
+    };
+    
+    //createusername savenewcred
+    $scope.securityTab = function() {
+
+        if ($scope.userDet.gstUser.$valid && $scope.userDet.userCred.$valid && $scope.userDet.retype.$valid) {
+            if ($scope.cu.uPassword === $scope.cu.repassword) {
+
+
+                var userDetails = {
+                    NewUsername: $scope.cu.user,
+                    Password: $scope.cu.uPassword
+
+                }
+                var userNameDetails = JSON.stringify(userDetails);
+
+                ajax.post("/services/auth/check/username", userNameDetails).then(function(response) {
+
+                    $log.debug(response);
+
+
+                    if (response.message === "true") {
+             			//$scope.securityQ = true;
+                        $('#sec').removeClass('not-active');
+                        $('#sec').addClass('on-page');
+                        $('#newc').show();
+                        $('.z3').addClass('step-on');
+                        $('#otp').hide();
+                        $('#otp1').show();
+                        $scope.alertMsgLogin = true;
+						$scope.cusubmit();
+
+
+
+                    } else if (response.errorCode === "SWEB_9008") {
+                        if ($scope.userDet.$setPristine) {
+                            $scope.userDet.$setPristine();
+                            $scope.cu.uPassword = null;
+                            $scope.cu.repassword = null;
+                            $scope.alertMsgLogin = false;
+                            $scope.login = false;
+
+
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                            $window.scrollTo(0, 0);
+                        }
+                    } else if (response.errorCode === "SWEB_9010") {
+                        if ($scope.userDet.$setPristine) {
+                            $scope.userDet.$setPristine();
+                            $scope.cu.uPassword = null;
+                            $scope.cu.repassword = null;
+                            $scope.alertMsgLogin = false;
+                            $scope.login = false;
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                            $window.scrollTo(0, 0);
+                        }
+                    } else if (response.errorCode === "SWEB_9011") {
+                        if ($scope.userDet.$setPristine) {
+                            $scope.userDet.$setPristine();
+                            $scope.cu.uPassword = null;
+                            $scope.cu.repassword = null;
+                            $scope.alertMsgLogin = false;
+                            $scope.login = false;
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                            $window.scrollTo(0, 0);
+                        }
+                    } else if (response.errorCode === "SWEB_9030") {
+                        if ($scope.userDet.$setPristine) {
+                            $scope.userDet.$setPristine();
+                            $scope.cu.uPassword = null;
+                            $scope.cu.repassword = null;
+                            $scope.alertMsgLogin = false;
+                            $scope.login = false;
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                            $window.scrollTo(0, 0);
+                        }
+                    } else if (response.errorCode === "SWEB_9021") {
+                        if ($scope.userDet.$setPristine) {
+                            $scope.userDet.$setPristine();
+                            $scope.cu.uPassword = null;
+                            $scope.cu.repassword = null;
+                            $scope.alertMsgLogin = false;
+                            $scope.login = false;
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                            $window.scrollTo(0, 0);
+                        }
+                    } else if (response.errorCode === "SWEB_8000") {
+                        if ($scope.userDet.$setPristine) {
+                            $scope.userDet.$setPristine();
+                            $scope.cu.uPassword = null;
+                            $scope.cu.repassword = null;
+                            $scope.alertMsgLogin = false;
+                            $scope.login = false;
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                            $window.scrollTo(0, 0);
+                        }
+                    } else if (response.errorCode == "SWEB_9009") {
+                        if ($scope.userDet.$setPristine) {
+                            $scope.userDet.$setPristine();
+                            $scope.cu.uPassword = null;
+                            $scope.cu.repassword = null;
+                            $scope.alertMsgLogin = false;
+                            $scope.login = false;
+                            $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                            $window.scrollTo(0, 0);
+                        }
+                    } else {
+                        if ($scope.userDet.$setPristine) {
+                            $scope.userDet.$setPristine();
+                            $scope.cu.uPassword = null;
+                            $scope.cu.repassword = null;
+                            $scope.alertMsgLogin = false;
+                            $scope.login = false;
+                            $scope.errorMsg1 = $scope.trans["ERR_SWEB_8000"];
+                            $window.scrollTo(0, 0);
+                        }
+                    }
+
+                }, function(response) {
+                    $log.debug(response);
+                })
+
+            }
+        } else {
+            $scope.alertMsgLogin = true;
+        }
+
+    };
+    
+    //createusrname final submit
+     var security;
+    $scope.cusubmit = function() {
+
+        if ($scope.userDet.$valid) {
+
+
+            $scope.oneClick = false;
+
+           
+            var userDetails = {
+                NewUsername: $scope.cu.user,
+                Password: $scope.cu.uPassword,
+                email: $scope.cu.email,
+                mobileNo: $scope.cu.Phone
+
+            }
+
+
+            var userDetails1 = JSON.stringify(userDetails);
+
+
+
+            ajax.post("/services/auth/create/username", userDetails1).then(function(response) {
+
+                $log.debug(response);
+                if (response.url === "/auth/logout") {
+                    $scope.alertMsgLogin = true;
+                    $window.location.href = "login?usrcr=1";
+
+
+
+                } else if (response.errorCode === "SWEB_9021") {
+                    if ($scope.userDet.$setPristine) {
+                        $scope.userDet.$setPristine();
+
+                        $scope.alertMsgLogin = false;
+                        $scope.login = false;
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                        $window.scrollTo(0, 0);
+                    }
+                } else if (response.errorCode === "SWEB_8000") {
+                    if ($scope.userDet.$setPristine) {
+                        $scope.userDet.$setPristine();
+
+                        $scope.alertMsgLogin = false;
+                        $scope.login = false;
+                        $scope.errorMsg1 = $scope.trans["ERR_" + response.errorCode];
+                        $window.scrollTo(0, 0);
+                    }
+                } else {
+                    if ($scope.userDet.$setPristine) {
+                        $scope.userDet.$setPristine();
+						$scope.alertMsgLogin = false;
+                        $scope.login = false;
+                        $scope.errorMsg1 = $scope.trans["ERR_SWEB_8000"];
+                        $window.scrollTo(0, 0);
+                    }
+                }
+
+            }, function(response) {
+                $log.debug(response);
+				$scope.alertMsgLogin = true;
+            })
+
+
+        } else {
+            $scope.alertMsgLogin = true;
+        }
+    }
+
+    
+}
+oidarCtrl.$inject = ['$scope', 'cache', '$rootScope', 'shareData', '$location', 'ajax', '$route', 'version', '$window', '$timeout', '$templateCache', '$log', 'utilFunctions', 'validations', '$compile'];
+
+
+function oidarCtrl($scope, cache, $rootScope, shareData, $location, ajax,
+		$route, version, $window, $timeout, $templateCache, $log,
+		utilFunctions, validations, $compile) {
+	/* init controller */
+	utilFunctions.initCache();
+	$scope.servers = $().getServers();
+	$scope.trans = utilFunctions.initLanguage('services');
+	$rootScope.$on("LangChanged", function(event, mass) {
+		$scope.trans = utilFunctions.initLanguage('services');
+	});
+	$scope.$on('$viewContentLoaded', function() {
+		$window.scrollTo(0, 0);
+		angular.element(document.querySelector('[autofocus]')).focus();
+	});
+	/* init completed */
+	$scope.UserDetails = true;
+	$scope.alertMsgLogin = true;
+	$scope.validations = validations;
+	$scope.oneClick = false;
+	$scope.migratehide = true;
+	$scope.errors = {};
+	$scope.setOidarRegistrationPage = function(flag) {
+
+		$location.path('/newlogin');
+	}
+	$scope.resendOtp = function() {
+		if ($scope.errors) {
+			$scope.errors = {};
+		}
+		if ($scope.plogin) {
+			delete $scope.plogin.smsOtp;
+			$scope.form_submitted = false;
+		}
+		$scope.captchashow = true;
+		$(window).scrollTop(0, 0);
+	};
+
+	$scope.setPrstine = function(field) {
+		if ($scope.preg[field].$error) {
+			$.map(Object.keys($scope.preg[field].$error), function(etype) {
+				if (etype !== "required") {
+					$scope.preg[field].$setValidity(etype, true);
+				}
+			});
+		}
+	};
+	$scope.captchaObj = {};
+
+	$scope.validateOidarOtp = function() {
+		var url;
+		if ($scope.errors) {
+			$scope.errors = {};
+		}
+		if ($scope.captchashow && $scope.preg.captcha.$valid) {
+			var obj = angular.copy(shareData.oidarReferenceData);
+			$scope.plogin = obj;
+			$scope.plogin.captcha = $scope.preg.captcha.$modelValue;
+			url = '/services/verifyentityid';
+			ajax.post(url, $scope.plogin, {}, function() {
+				$().blockPage(true);
+			}, function() {
+				$().blockPage(false);
+			}).then(function(response) {
+				if (response && response.errorCode) {
+					if (response.errorCode === 'SWEB_9000') {
+						$scope.errors.err = "LBL_INVALID_CAPTCHA";
+						$scope.captchaObj.refresh();
+						$(window).scrollTop(0, 0);
+					} else {
+						$scope.errors.err = "LBL_SYSTEM_ERROR";
+					}
+
+				} else if (response && response.successCode === null) {
+					if (response.message === "OP") {
+						shareData.oidarReferenceData;
+						$scope.captchashow = false;
+						$scope.errors.otpresend = true;
+						$scope.form_submitted = false;
+						$().resetDigest();
+						$location.path('/auth/oidarotpverification');
+					}
+				} else {
+					$scope.errors.err = "LBL_SYSTEM_ERROR";
+				}
+			}, function(err) {
+				$().blockPage(false);
+				$scope.errors.err = "ERR_SYSTEM_ERROR"
+				$scope.form_submitted = false;
+				if ($scope.plogin.captcha) {
+					$scope.plogin.captcha = "";
+					$scope.reloadCaptcha();
+				}
+				$(window).scrollTop(0, 0);
+			});
+		} else if ($scope.preg.$valid) {
+			var obj = angular.copy(shareData.oidarReferenceData);
+			$scope.plogin.oidar = obj.username;
+			url = '/services/auth/validate/oidarotp'
+			ajax.post(url, $scope.plogin, {}, function() {
+				$().blockPage(true);
+			}, function() {
+				$().blockPage(false);
+			}).then(function(response) {
+				if (response && response.errorCode) {
+					if (response.errorCode === "SWEB_9003") {
+						$scope.errors.err = "ERR_MOB_OTP";
+					} else {
+						$scope.errors.err = "ERR_SYSTEM_ERROR"
+					}
+				} else {
+					$().resetDigest();
+					var obj = angular.copy($scope.plogin);
+					delete obj.captcha;
+					shareData.oidarReferenceData = obj;
+					$().resetDigest();
+					$location.path('/auth/createoidaruser');
+
+				}
+			}, function(err) {
+				$().blockPage(false);
+				$scope.errors.err = "ERR_SYSTEM_ERROR"
+				$scope.form_submitted = false;
+				if ($scope.plogin.captcha) {
+					$scope.plogin.captcha = "";
+					$scope.reloadCaptcha();
+				}
+				$(window).scrollTop(0, 0);
+			});
+		} else {
+			if (!$scope.captchashow) {
+				$scope.form_submitted = true;
+			} else {
+				$scope.cap_sub = true;
+				$scope.focus('#captcha');
+			}
+		}
+	};
+
+	$scope.saveOidarUser = function() {
+		$scope.form_submitted = $scope.preg.$submitted;
+		$scope.errors = {};
+		if ($scope.preg.$valid) {
+			if ($scope.lform.password === $scope.lform.password1) {
+				var url;
+				if ($scope.errors) {
+					$scope.errors = {};
+				}
+				$scope.validateCreateOidarUser($scope.lform.username,
+						$scope.lform.password);
+			} else {
+				$scope.errors.err = "ERR_PWD_NT_MTCH";
+				$(window).scrollTop(0, 0);
+			}
+		}
+	};
+	$scope.validateCreateOidarUser = function(userName, passwd) {
+		var userDetails = {
+			NewUsername : userName,
+			Password : passwd
+		}
+		var userNameDetails = JSON.stringify(userDetails);
+		var url = '/services/auth/create/oidaruser'
+		ajax.post(url, userNameDetails).then(function(response) {
+			if (response && response.message === "true") {
+				$().resetDigest();
+				$window.location.href = "/services/oidarusercreated";
+			} else if (response && response.errorCode === "428") {
+				$window.location.href = "/services/error/dataerror";
+				$(window).scrollTop(0, 0);
+			} else if (response && response.errorCode) {
+				switch (response.errorCode) {
+				case "SWEB_9010":
+					// "Username should be of 8 to 15 characters (where the
+					// minimum length is 8 characters and maximum length is
+					// 15 characters)" + "which should start with an
+					// alphabet, can be contain alphabets, numbers and
+					// special characters (dot [.] or underscore [_] or
+					// hyphen [-])";
+
+				case "SWEB_9011":
+					// "Password should be of 8 to 15 characters (where the
+					// minimum length is 8 characters and maximum length is
+					// 15 characters) " + "which should comprise of at least
+					// one number, special character " + "and letters( at
+					// least one upper and lower case)";
+
+				case "SWEB_9030":
+					// The username entered matches the pattern of PAN.
+					// Kindly choose a different username"
+
+				case "SWEB_9021":
+					// Session expired. Kindly Login again.";
+
+				case "SWEB_9009":
+					// Username already exists. Kindly choose another
+					// username.";
+
+				case "SWEB_8000":
+				case "false":
+				case false:
+					$scope.errors.err = "ERR_" + response.errorCode;
+					$scope.form_submitted = false;
+					$(window).scrollTop(0, 0);
+					break;
+				}
+			} else {
+				$().blockPage(false);
+				$scope.errors.err = "ERR_SWEB_8000"
+				$scope.form_submitted = false;
+				$(window).scrollTop(0, 0);
+			}
+
+		}, function(err) {
+			$().blockPage(false);
+			$scope.errors.err = "ERR_SWEB_8000"
+			$scope.form_submitted = false;
+			if ($scope.plogin.captcha) {
+				$scope.plogin.captcha = "";
+				$scope.reloadCaptcha();
+			}
+			$(window).scrollTop(0, 0);
+		});
+	}
+}
+uinCtrl.$inject = ['$scope', 'cache', '$rootScope', 'shareData', '$location', 'ajax', '$route', 'version', '$window', '$timeout', '$templateCache', '$log', 'utilFunctions', 'validations', '$compile'];
+function uinCtrl($scope, cache, $rootScope, shareData, $location, ajax, $route, version, $window, $timeout, $templateCache, $log, utilFunctions, validations, $compile) {
+	utilFunctions.initCache();
+	$scope.servers = $().getServers();
+	$scope.trans = utilFunctions.initLanguage('services');
+	$rootScope.$on("LangChanged", function(event, mass) {
+		$scope.trans = utilFunctions.initLanguage('services');
+	});
+	$scope.$on('$viewContentLoaded', function() {
+		$window.scrollTo(0, 0);
+		angular.element(document.querySelector('[autofocus]')).focus();
+	});
+	/*init completed*/
+	$scope.UserDetails = true;
+	$scope.alertMsgLogin = true;
+	$scope.validations = validations;
+	$scope.errors = {};
+	$scope.uinNewLogin = function(flag) {
+		$location.path('/newlogin');
+	}
+	$scope.resendOtp = function() {
+		if ($scope.errors) {
+			$scope.errors = {};
+		}
+		if ($scope.plogin) {
+			delete $scope.plogin.smsOtp;
+			delete $scope.plogin.captcha;
+			$scope.form_submitted = false;
+		}
+		$scope.captchashow = true;
+		$(window).scrollTop(0, 0);
+	};
+
+	$scope.setPrstine = function(field) {
+		if ($scope.preg[field].$error) {
+			$.map(Object.keys($scope.preg[field].$error), function(etype) {
+				if (etype !== "required") {
+					$scope.preg[field].$setValidity(etype, true);
+				}
+			});
+		}
+	};
+   
+
+	$scope.captchaObj = {
+
+	};
+
+	$scope.validateUinOtp = function() {
+		var url;
+		if ($scope.errors) {
+			$scope.errors = {};
+		}
+		if ($scope.captchashow && $scope.preg.captcha.$valid) {
+			var obj = angular.copy(shareData.uinReferenceData);
+			$scope.plogin = obj;
+			$scope.plogin.captcha=$scope.preg.captcha.$modelValue;
+			url = '/services/verifyentityid';
+			ajax.post(url, $scope.plogin, {}, function() {
+				$().blockPage(true);
+			}, function() {
+				$().blockPage(false);
+			}).then(function(response) {
+				if (response && response.errorCode) {
+					if (response.errorCode === 'SWEB_9000') {
+						$scope.errors.err = "LBL_INVALID_CAPTCHA";
+						$scope.captchaObj.refresh();
+						$(window).scrollTop(0, 0);
+					} else {
+						$scope.errors.err = "LBL_SYSTEM_ERROR";
+					}
+
+				}  else if (response && response.successCode === null) {
+                    if (response.message === "UN") {
+    					shareData.uinReferenceData;
+    					$scope.captchashow = false;
+                        $scope.errors.otpresend = true;
+                        $scope.form_submitted = false;
+    					$().resetDigest();
+                    	$location.path('/auth/uinotpverification');
+                    }
+                }
+				 else {
+						$scope.errors.err = "LBL_SYSTEM_ERROR";
+					}
+			}, function(err) {
+				$().blockPage(false);
+				$scope.errors.err = "ERR_SYSTEM_ERROR"
+				$scope.form_submitted = false;
+				if ($scope.plogin.captcha) {
+					$scope.plogin.captcha = "";
+					$scope.reloadCaptcha();
+				}
+				$(window).scrollTop(0, 0);
+			});
+		} else if ($scope.preg.$valid) {
+			var obj = angular.copy(shareData.uinReferenceData);
+			$scope.plogin.uid = obj.username;
+			url='/services/auth/validate/uinotp'
+			ajax.post(url, $scope.plogin, function() {
+				$().blockPage(true);
+			}, function() {
+				$().blockPage(false);
+			}).then(function(response) {
+				if (response && response.errorCode) {
+					if (response.errorCode === "SWEB_9003") {
+						$scope.errors.err = "ERR_MOB_OTP";
+					} else {
+						$scope.errors.err = "ERR_SYSTEM_ERROR"
+					}
+				} else {
+					$().resetDigest();
+					var obj = angular.copy($scope.plogin);
+					delete obj.captcha;
+					shareData.uinReferenceData = obj;
+					$().resetDigest();
+					$location.path('/auth/createuinuser');
+
+				}
+			}, function(err) {
+				$().blockPage(false);
+				$scope.errors.err = "ERR_SYSTEM_ERROR"
+				$scope.form_submitted = false;
+				if ($scope.plogin.captcha) {
+					$scope.plogin.captcha = "";
+					$scope.reloadCaptcha();
+				}
+				$(window).scrollTop(0, 0);
+			});
+		} else {
+			if (!$scope.captchashow) {
+				$scope.form_submitted = true;
+			} else {
+				$scope.cap_sub = true;
+				$scope.focus('#captcha');
+			}
+		}
+	};
+
+	$scope.saveUinUser = function() {
+		$scope.form_submitted = $scope.preg.$submitted;
+		$scope.errors = {};
+		if ($scope.preg.$valid) {
+			if($scope.lform.password === $scope.lform.password1){
+				var url;
+				if ($scope.errors) {
+					$scope.errors = {};
+				}
+				$scope.validateCreateUser($scope.lform.username,$scope.lform.password);
+			}
+			else{
+				$scope.errors.err="ERR_PWD_NT_MTCH";
+				$(window).scrollTop(0, 0);
+			}
+    	}
+	};
+	$scope.validateCreateUser = function(userName, passwd) {
+		var userDetails = {
+			NewUsername : userName,
+			Password : passwd
+		}
+		var userNameDetails = JSON.stringify(userDetails);
+		var url = '/services/auth/create/uinuser'
+		ajax.post(url, userNameDetails).then(function(response) {
+			if (response && response.message === "true") {
+				$().resetDigest();
+				$window.location.href = "/services/uinusercreated";
+			} else if (response && response.errorCode === "428") {
+				$window.location.href = "/services/error/dataerror";
+				$(window).scrollTop(0, 0);
+			} else if (response && response.errorCode) {
+				switch (response.errorCode) {
+				case "SWEB_9010":
+					// "Username should be of 8 to 15 characters (where the
+					// minimum length is 8 characters and maximum length is
+					// 15 characters)" + "which should start with an
+					// alphabet, can be contain alphabets, numbers and
+					// special characters (dot [.] or underscore [_] or
+					// hyphen [-])";
+
+				case "SWEB_9011":
+					// "Password should be of 8 to 15 characters (where the
+					// minimum length is 8 characters and maximum length is
+					// 15 characters) " + "which should comprise of at least
+					// one number, special character " + "and letters( at
+					// least one upper and lower case)";
+
+				case "SWEB_9030":
+					// The username entered matches the pattern of PAN.
+					// Kindly choose a different username"
+
+				case "SWEB_9021":
+					// Session expired. Kindly Login again.";
+
+				case "SWEB_9009":
+					// Username already exists. Kindly choose another
+					// username.";
+
+				case "SWEB_8000":
+				case "false":
+				case false:
+					$scope.errors.err = "ERR_" + response.errorCode;
+					$scope.form_submitted = false;
+					$(window).scrollTop(0, 0);
+					break;
+				}
+			} else {
+				$().blockPage(false);
+				$scope.errors.err = "ERR_SWEB_8000"
+				$scope.form_submitted = false;
+				$(window).scrollTop(0, 0);
+			}
+
+		}, function(err) {
+			$().blockPage(false);
+			$scope.errors.err = "ERR_SWEB_8000"
+			$scope.form_submitted = false;
+			if ($scope.plogin.captcha) {
+				$scope.plogin.captcha = "";
+				$scope.reloadCaptcha();
+			}
+			$(window).scrollTop(0, 0);
+		});
+	}
+	
+}

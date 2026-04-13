@@ -1,0 +1,860 @@
+/*jslint browser: true*/
+/*global $, jQuery, angular, myApp, fologinCtrl, $val*/
+"use strict";
+myApp.controller("loginCtrl", loginCtrl);
+myApp.controller("menuCtrl", menuCtrl);
+myApp.controller("welcomeCtrl", welcomeCtrl);
+
+menuCtrl.$inject = ['$scope', '$http', 'cache', '$rootScope', 'shareData', '$location', 'ajax', '$route', 'version', '$window', '$log'];
+
+function menuCtrl($scope, $http, cache, $rootScope, shareData, $location, ajax, $route, version, $window, $log) {
+  
+    $scope.trackarn = [];
+    $scope.trackarn  =  shareData.trackarn;
+
+    $scope.servers = $().getServers();
+
+    $scope.callEditReg = function () {
+
+
+        window.location.href = $scope.servers["GST_REGISTRATION_URL"] + "/registration/auth/business-details";
+    };
+
+
+    $scope.dashboard = function () {
+
+        window.location.href = '/services/auth/welcome';
+
+    };
+
+
+    $rootScope.buttonflag = false;
+    $rootScope.editflag = true;
+    $rootScope.editflag1 = true;
+    $rootScope.popupflag = false;
+
+    $scope.mysavedapp = function () {
+        ajax.get("/services/auth/mig/trackarn").then(function (response) {
+            if (response.errorCode === "SWEB_8000") {
+                $rootScope.errorflag = true;
+                $rootScope.successflag = false;
+                $rootScope.errorMsg1 = "System error occurred. Please try after sometime";
+            } else if (response.errorCode === "FO8006") {
+                $rootScope.errorflag = true;
+                $rootScope.successflag = false;
+                $rootScope.errorMsg1 = "No Record Found";
+            } else {
+
+                if (response.sts === "DFT" || response.sts === "VAE") {
+                    $rootScope.editflag = false;
+                    $rootScope.editflag1 = false;
+                } else if (response.sts === "PSG") {
+                    $rootScope.editflag = false;
+                    $rootScope.editflag1 = true;
+                }
+
+                $rootScope.successflag = true;
+                $rootScope.errorflag = false;
+                $scope.trackarn = angular.copy(response);
+                $rootScope.trackarn = angular.copy(response);
+                if ($rootScope.trackarn.sts === "MIG") {
+                    $rootScope.buttonflag = true;
+                }
+                //sharedData.set($scope.trackarn);
+                
+                shareData.trackarn = $scope.trackarn;
+				
+			ajax.get("/master/applnt/" + response.frmdc).then(function(response1) {
+              $scope.applntfrmdc = response1.data[0].n;
+				   }, function(err) {
+            $scope.errors = "HTTP " + err.code + ": " + err.msg;
+                 });
+            }
+
+        });
+        $location.path("/auth/mig/dashboard");
+    };
+
+
+
+$scope.toggle = false;
+    $scope.download = function () {
+	
+        ajax.get("/services/auth/formdownload").then(function (response) {
+            if (!angular.isUndefined(response.sts)) {
+              $scope.toggle = true;
+                if (response.sts === "FO8006") {
+				    $scope.dwnldMsg = "Request for form download is submitted";
+                    $rootScope.popupflag = true;
+                } else if (response.sts === "FO8007") {
+			        $scope.dwnldMsg = "Form generation for download is under process, please try after some time";
+                    $rootScope.popupflag = true;
+                } else if (response.sts === "FO8008") {
+                    $scope.dwnldMsg = "Form Download Request Failed";
+                    $rootScope.popupflag = true;
+                }
+            } else if (!angular.isUndefined(response.url)) {
+			$scope.toggle = false;
+
+		        var url = "/document/dir/" + response.url;
+			
+                location.href = url;
+
+            }
+
+        });
+
+    };
+
+
+
+    $scope.downloadPdf = function () {
+        ajax.get("/services/auth/ackdwnld").then(function (response) {
+
+            var frmDesc1 = "";
+            ajax.get("/master/applnt/" + response.frmDesc).then(function(response1) {
+			
+             var sts = "";
+            if (response.status === "DFT") {
+                sts = "Draft";
+            } else if (response.status === "PFV") {
+                sts = "Submitted and Pending for verification";
+            } else if (response.status === "MIG") {
+                sts = "Migrated";
+            } else if (response.status === "VAE") {
+                sts = "Validation Error";
+            } else if (response.status === "PSG") {
+                sts = "Pending Signature";
+            } else if (response.status === "PSB") {
+                sts = "Pending for Submission";
+            } else if (response.status === "SUB") {
+                sts = "Submitted";
+            } else if (response.status === "APR") {
+                sts = "Approved";
+            } else if (response.status === "RJT") {
+                sts = "Rejected";
+            } else if (response.status === "DEL") {
+                sts = "Deleted";
+            }
+           
+        
+
+            var docDefinition = {
+                // a string or { width: number, height: number }
+                pageSize: 'A4',
+
+                // by default we use portrait, you can change it to landscape if you wish
+                pageOrientation: 'landscape',
+
+                // [left, top, right, bottom] or [horizontal, vertical] or just a number for equal margins
+                pageMargins: [25, 60, 25, 60],
+                content: [{table: {widths: ['*'],
+                            body: [[{text: [{text: '\t\tAcknowledgment\n\n',
+                                            style: 'header'
+                                        }, {text: '\t\tForm GST- "Application for Enrolment of Existing Tax Payer" has been filed against Application Reference Number (ARN) \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t' + response.arn + '.\n\n',
+                                            style: 'appform'
+                                        }, {text: '\t\tForm Description \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t',
+                                            style: 'acknowledgmentName'
+                                        }, {text: response1.data[0].n + '\n\n',
+                                            style: 'acknowledgmentValue'
+                                        }, {text: '\t\tDate of Filing      \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t:\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t',
+                                            style: 'acknowledgmentName'
+                                        }, {text: response.dateofFil + '\n\n',
+                                            style: 'acknowledgmentValue'
+                                        }, {text: '\t\tTaxpayer Trade Name\t\t\t\t\t\t\t\t\t\t:\t\t\t\t\t\t\t\t\t\t\t\t\t\t',
+                                            style: 'acknowledgmentName'
+                                        }, {text: response.tradeName + '\n\n',
+                                            style: 'acknowledgmentValue'
+                                        }, {text: '\t\tTaxpayer Legal Name \t\t\t\t\t\t\t\t\t\t:\t\t\t\t\t\t\t\t\t\t\t\t\t\t',
+                                            style: 'acknowledgmentName'
+                                        }, {text: response.legalName + '\n\n',
+                                            style: 'acknowledgmentValue'
+                                        }, {text: '\t\tProvisional ID Number\t\t\t\t\t\t\t\t\t\t:\t\t\t\t\t\t\t\t\t\t\t\t\t\t',
+                                            style: 'acknowledgmentName'
+                                        }, {text: response.gstnId + '\n\n',
+                                            style: 'acknowledgmentValue'
+                                        }]
+                                    }
+
+                                ]
+                            ]
+                        }
+                    },
+
+                   '\n',
+
+					{
+                        ul: [
+                            '\t\tIt is a system generated acknowledgement and does not require any signature.\n\n'
+                        ],
+                        style: 'disclaimer'
+                    }, /*{
+                        ol: [
+                            '\t\tThe Form is filed without signatures. Please attach Digital Signature or e-Sign and resubmit the Form. In absence of Signature, Final Registration Certificate will not be issued. GSTIN will not be activated.'
+                        ],
+                        style: 'disclaimer'
+                    }*/
+
+                ],
+                styles: {
+                    acknowledgmentName: {
+                        fontSize: 16,
+                        bold: true
+                    },
+                    acknowledgmentValue: {
+                        fontSize: 16
+                    },
+                    header: {
+                        alignment: 'left',
+                        bold: true,
+                        fontSize: 16
+                    },
+                    appform: {
+                        alignment: 'left',
+                        fontSize: 14
+                    },
+                    disclaimer: {
+                        fontSize: 13,
+                        margin: [20, 0]
+                    }
+
+                }
+
+            };
+
+            pdfMake.createPdf(docDefinition).download(response.arn + "_MIGFORM.pdf");
+
+        });
+		
+				   }, function(err) {
+            $scope.errors = "HTTP " + err.code + ": " + err.msg;
+                 });
+    };
+}
+
+loginCtrl.$inject = ['$scope', 'cache', '$rootScope', 'shareData', '$location', 'ajax', '$route', '$window', '$timeout', '$templateCache', '$log', 'utilFunctions', 'validations', '$compile', '$sce'];
+
+
+function loginCtrl($scope, cache, $rootScope, shareData, $location, ajax, $route, $window, $timeout, $templateCache, $log, utilFunctions, validations, $compile, $sce) {
+    /* init controller */
+     /*risk code to be added*/
+
+    $scope.initRBADetails = function () {
+        $scope.client = new ca.rm.Client();
+        var contextPath = $location.path();
+
+        $scope.client.setProperty("baseurl", contextPath);
+        $scope.client.setProperty("format", "json");
+        $scope.client.setProperty("didname", "RBA_COOKIE"); ////response set
+        $scope.client.processDNA();
+
+    };
+    $scope.initRBADetails();
+ /*risk code to be added*/
+    utilFunctions.initCache();
+    $scope.servers = $().getServers();
+    $scope.trans = utilFunctions.initLanguage('services');
+    $rootScope.$on("LangChanged", function(event, mass) {
+        $scope.trans = utilFunctions.initLanguage('services');
+    });
+    $scope.$on('$viewContentLoaded', function() {
+        $window.scrollTo(0, 0);
+        angular.element(document.querySelector('[autofocus]')).focus();
+    });
+    /*init completed*/
+
+
+    $scope.focus = function(ele) {
+        $timeout(function() {
+            if (angular.element(ele)) {
+                angular.element(ele).focus();
+            }
+        });
+    };
+
+    setInterval(function() {
+
+        if (window.location.href.indexOf("/waiting") > 0) {
+
+
+            ajax.get("/services/checksysavailability").then(function(response) {
+
+                if (response.successCode === "true") {
+                    window.location.href = "/services/login";
+                } else {
+                    window.location.href = "/services/waiting";
+                }
+            });
+        }
+    }, 60000);
+
+    var successCode = shareData.successCode,
+        deps, dep;
+    $scope.consent = true;
+    $scope.validations = validations;
+    $scope.findUserType = function(username) {
+        if (username && username !== null && username !== undefined) {
+            if (username.charAt(0).match($scope.validations.formats.number) || username.match($scope.validations.formats.pan)) {
+                return "uid";
+            } else {
+                return "username";
+            }
+        }
+        return "";
+    };
+
+
+
+    $scope.getCData = function(item) {
+
+        if (cache.get(item).length > 0) {
+            $scope[item] = cache.get(item);
+        } else {
+            ajax.get($scope.resources[item]).then(function(response) {
+                $scope[item] = response.data;
+                cache.set(item, response.data);
+                delete $scope.errors[item];
+            }, function(err) {
+                $scope.errors[item] = err.msg;
+            });
+        }
+
+    };
+
+    if ($route.current) {
+        deps = $route.current.$$route.deps || [];
+        for (dep in deps) {
+            $scope[deps[dep]] = cache.get(deps[dep]) || [];
+            if ($scope[deps[dep]].length === 0) {
+                $scope.getCData(deps[dep]);
+            }
+        }
+    }
+    $scope.errors = {};
+    /* services code */
+    $scope.setPristine = function(form, ele, prop) {
+        $scope[form][ele].$setValidity(prop, true);
+    }
+
+    $scope.showLogin = function() {
+        $scope.consent = false;
+        $('#fo-user').focus();
+    }
+
+
+    //success message for fp and fu
+    $scope.alertMsgSuccess = true;
+
+    if (window.location.href.indexOf("/login?usrcr=1") > 0) {
+        $scope.alertMsgSuccess = false;
+        $scope.successMsg = $scope.trans["SUCSS_USR_CR"];
+    }
+
+    if (successCode === "SWEB_9019") {
+        $scope.alertMsgSuccess = false;
+        $scope.successMsg = $scope.trans["SUCSS_" + successCode];
+    } else if (successCode === "SWEB_9020") {
+        $scope.alertMsgSuccess = false;
+        $scope.successMsg = $scope.trans["SUCSS_" + successCode];
+    }
+
+    $scope.captchaObj = {
+
+    };
+
+    $scope.saveUserLogin = function() {
+
+        $scope.errors["login_error"] = false;
+        $scope.client.processDNA();
+        $scope.alertMsgSuccess = true;
+        $scope.lform.mFP = $scope.client.getDNA();
+        $scope.lform.deviceID = $scope.client.getDID();
+        /*CR#21637 code changes start*/
+        if(localStorage.getItem("isPostPP") != null){
+			localStorage.removeItem("isPostPP");
+		}
+        /*CR#21637 code changes end*/
+        if ($scope.loginform.$valid) {
+            $scope.lform.type = "username";
+            ajax.post("/services/authenticate", $scope.lform, {}, function() {
+                $().blockPage(true);
+            }, function() {
+                $().blockPage(false);
+            }).then(function(response) {
+                 if (response && response.url && response.message) {
+                    var rbaResponse = JSON.parse(response.message);
+                    shareData.loginDetails = response;
+                    switch (response.errorCode) {
+                    case 'RSK_1000':
+
+                        $scope.client.setDID(rbaResponse.deviceID);
+                        $location.path("/otpforauth");
+                        break;
+                    case 'RSK_1001':
+                        // rbaResponse.ruleMatched
+                        window.location.href = "/services/error/blocked?msgCd=" + rbaResponse.ruleMatched;
+                        break;
+
+                        /* case 'RSK_1002':
+                             $location.path("/otpforauth");
+                             break;*/
+                    default:
+                        window.location.href = "/services/auth/";
+
+                        break;
+                    }
+
+                    //$location.path("/otpforauth");
+
+                } else if (response && response.message === "auth" && window.location.href.indexOf('src=PAY') > 0  && window.location.href.indexOf('next=OPTIN') > 0) {
+					// request for login from PAYMENT module filing preference warning popup
+					// instead of dashboard redirect to filing preference selection page 
+                    window.location.href = $scope.servers["GST_RETURNS_R1_URL"] + '/returns/auth/managertnprofile';
+                }else if (response && response.message === "auth" && window.location.href.indexOf('src=PAY') > 0  && window.location.href.indexOf('next=RETDASH') > 0) {
+					// request for login from PAYMENT module filing preference warning popup
+					// instead of dashboard redirect to filing preference selection page 
+                    window.location.href = $scope.servers["GST_RETURNS_R1_URL"] + '/returns/auth/dashboard';
+                }else if (response && response.message === "auth" && window.location.href.indexOf('einvoice') > 0) {
+					// request for login from einvoice module
+					// instead of dashboard redirect to einvoice dashboard page 
+                    console.log(" window.location.href.indexOf('einvoice') is : ", window.location.href.indexOf('einvoice'));
+                    window.location.href = $scope.servers["GST_EINVOICE_URL"] + '/einvoice/dashboard';
+                } else if (response && response.message === "auth") {
+                    window.location.href = "/services/auth/";
+                } else if (response.errorCode === "mobileapp") {
+                    $window.location.href ="/services/auth/uploadjson";
+                } else if(response.errorCode === "SWEB_2002"){                   
+                    $window.location.href ="/services/auth/restrictupload";
+                } else if (response && response.message === null && response.successCode === null) {
+                    $window.location.href = $scope.servers["GST_PAYMENTS_R1_URL"] + response.url;
+                } else {
+                    if (response && response.errorCode) {
+                        //$scope.newRegForm.bd_Ext_type.$setValidity("required", false);
+                        $scope.captchaObj.refresh();
+                        delete $scope.lform.captcha;
+                        delete $scope.lform.password;
+                        $("#user_pass").focus();
+
+                        switch (response.errorCode) {
+                            case "SWEB_9006":
+                                $location.path("/serverbusy");
+                                break;
+                            case "AUTH_9033":
+                                //Password has expired.
+                                $window.location.href = "/services/auth/changepassword";
+                                break;
+							case "AUTH_9033_MIG":
+								//Password has expired – R0 user.
+								$window.location.href = "/services/auth/mig/changepassword";
+								break;
+                            case "SWEB_9000":
+                                //Invalid captcha
+                                $scope.loginform.$setPristine();
+                                $scope.loginform.user_name.$setDirty();
+                                $scope.loginform.captcha.$setValidity("invalid_captcha", false);
+                                break;
+                            case "SWEB_9034":
+                                //Invalid captcha
+                                $scope.loginform.$setPristine();
+                                $scope.loginform.user_name.$setDirty();
+                                $scope.errors["login_error"] = true;
+                                $scope.errors["login_error_desc"] = $scope.trans["ERR_" + response.errorCode];
+                                break;
+							case "SWEB_9036":
+                                //Invalid R0 user
+                                $scope.loginform.$setPristine();
+                                $scope.loginform.user_name.$setDirty();
+                                $scope.errors["login_error"] = true
+                                $scope.errors["login_error_desc"] = $scope.trans["ERR_" + response.errorCode];
+                                break;
+							 case "SWEB_8001":
+	                                //User login using old username and password
+	                                $scope.loginform.$setPristine();
+	                                $scope.loginform.user_name.$setDirty();
+	                                $scope.errors["login_error"] = true;
+	                                $scope.errors["login_error_desc"] = $scope.trans["ERR_" + response.errorCode];
+	                                break; 
+							 case "SWEB_8002":
+	                                //redis issue encountered
+	                                $scope.loginform.$setPristine();
+	                                $scope.loginform.user_name.$setDirty();
+	                                $scope.errors["login_error"] = true;
+	                                $scope.errors["login_error_desc"] = $scope.trans["ERR_" + response.errorCode];
+	                                break; 
+                            case "AUTH_9002":
+                            case "SWEB_9014":
+                            case "SWEB_8000":
+                            case "false":
+                            case false:
+                                //Invalid Username or Password
+                                //System error	
+                                //wrong pass - 3 times - acc locked
+                                $scope.errors["login_error"] = true;
+                                $scope.loginform.$setPristine();
+                                $scope.loginform.user_name.$setDirty();
+                                $scope.errors["login_error_desc"] = $scope.trans["ERR_" + response.errorCode];
+                                break;
+                        }
+                    } else {
+                        $scope.errors["login_error"] = true;
+                        $scope.errors["login_error_desc"] = $scope.trans["ERR_SWEB_8000"];
+                    }
+                    if ($scope.errors["login_error_desc"] && $scope.errors["login_error_desc"] != "") {
+                        var alert_dlg = utilFunctions.createAlert({
+                            "title": "",
+                            "type": "danger",
+                            "message": $scope.errors["login_error_desc"]
+                        });
+                        $('[name=errContainer]').empty().append($compile(alert_dlg)($scope));
+                    }
+                }
+            }, function(err) {
+                $().blockPage(false);
+            })
+        }
+    }
+
+
+    $scope.saveNewUserLogin = function() {
+
+        $scope.lform.user = $scope.findUserType($scope.lform.username);
+        $scope.errors1={};
+        $scope.errors1["login_error"] = false;
+        $scope.errors["login_error"] = false;
+        if ($scope.lform.user === "") {
+            return false;
+        }
+        if ($scope.loginform.$valid) {
+            var gst = $scope.validations.gstin($scope.lform.username);
+            if ($scope.lform.user !== "username") {
+
+                ajax.post("/services/verifyentityid", $scope.lform, {}, function() {
+                    $().blockPage(true);
+                }, function() {
+                    $().blockPage(false);
+                }).then(function(response) {
+                    $log.debug(response);
+
+                    //                    var nonmigrate = "N";
+                    //                    if(nonmigrate === "N"){ $location.path("/migrate-create-user");}
+
+
+
+                    if (response && response.successCode === null) {
+                        if (response.message === "Y") {
+                            $location.path("/createusername");
+                        } else if (response.message === "N") {
+
+                            $location.path("/migrate-create-user");
+                        }else if (response.message === "OP") {
+                        	$scope.plogin=$scope.lform;
+        					var obj = angular.copy($scope.plogin);
+        					delete obj.captcha;
+        					shareData.oidarReferenceData = obj;
+        					$scope.captchashow = false;
+                            $scope.form_submitted = false;
+        					$().resetDigest();
+                        	$location.path('/auth/createoidaruser');
+                        } else if (response.message === "UN") {
+                        	$scope.plogin=$scope.lform;
+        					var obj = angular.copy($scope.plogin);
+        					delete obj.captcha;
+        					shareData.uinReferenceData = obj;
+        					$scope.captchashow = false;
+                            $scope.errors.otpresend = true;
+                            $scope.form_submitted = false;
+        					$().resetDigest();
+                        	$location.path('/auth/uinotpverification');
+                        }
+                    } else {
+                        if (response && response.errorCode) {
+                            $scope.captchaObj.refresh();
+                            delete $scope.lform.captcha;
+                            delete $scope.lform.password;
+                            $("#fo-pwd").focus();
+
+                            switch (response.errorCode) {
+                                case "SWEB_9006":
+                                    $location.path("/serverbusy");
+                                    break;
+                                case "AUTH_9033":
+                                    //Password has expired.
+                                    $window.location.href = "/services/auth/changepassword";
+                                    break;
+                                case "AUTH_9033_MIG":
+									//Password has expired – R0 user.
+									$window.location.href = "/services/auth/mig/changepassword";
+									break;
+                                case "SWEB_9000":
+                                    //Invalid captcha
+                                    $scope.loginform.$setPristine();
+                                    $scope.loginform.gstid.$setDirty();
+                                    $scope.loginform.captcha.$setValidity("invalid_captcha", false);
+                                    break;
+                                case "SWEB_9034":
+                                    //Cancelled GSTIN / UIN
+                                    $scope.loginform.$setPristine();
+                                    $scope.loginform.gstid.$setDirty();
+                                    $scope.errors["login_error"] = true;
+                                    $scope.errors["login_error_desc"] = $scope.trans["ERR_" + response.errorCode];
+                                    break;
+								case "SWEB_9036":
+                                    //Cancelled R0 user
+                                    $scope.loginform.$setPristine();
+                                    $scope.loginform.gstid.$setDirty();
+                                    $scope.errors1["login_error"] = true;
+                                    $scope.errors1["login_error_desc"] = $scope.trans["ERR_" + response.errorCode];
+                                    break;
+								case "SWEB_9013":
+									//CR#18828 code changes
+                                    $scope.errors["login_error"] = true;
+                                    $scope.loginform.$setPristine();
+                                    $scope.loginform.gstid.$setDirty();
+                                    $scope.errors["login_error_desc"] = $scope.trans.ERR_EXPIRY;
+                                    break;
+                                case "AUTH_9002":
+                                case "SWEB_9008":
+
+                                case "SWEB_8000":
+                                case "false":
+                                case false:
+                                    //Invalid Username or Password
+                                    //System error	
+                                    //wrong pass - 3 times - acc locked
+                                    
+                                    $scope.errors["login_error"] = true;
+                                    $scope.loginform.$setPristine();
+                                    $scope.loginform.gstid.$setDirty();
+                                    $scope.errors["login_error_desc"] = $scope.trans["ERR_" + response.errorCode];
+                                    break;
+                            }
+                        } else {
+                            $scope.errors["login_error"] = true;
+                            $scope.errors["login_error_desc"] = $scope.trans["ERR_SWEB_8000"];
+                        }
+
+                        if ($scope.errors["login_error_desc"] && $scope.errors["login_error_desc"] != "") {
+                            var alert_dlg = utilFunctions.createAlert({
+                                "title": "",
+                                "type": "danger",
+                                "message": $scope.errors["login_error_desc"]
+                            });
+                            $('[name=errContainer]').empty().append($compile(alert_dlg)($scope));
+                        }
+                    }
+                }, function(err) {
+
+                })
+
+            } else {
+                $scope.captchaObj.refresh();
+
+                delete $scope.lform.captcha;
+                delete $scope.lform.password;
+                $scope.errors["login_error"] = true;
+                $scope.loginform.$setPristine();
+                $scope.loginform.gstid.$setDirty();
+                $scope.errors["login_error_desc"] = $scope.trans["ERR_PROV"];
+
+                $('#fo-user').focus();
+
+                if ($scope.errors["login_error_desc"] && $scope.errors["login_error_desc"] != "") {
+                    var alert_dlg = utilFunctions.createAlert({
+                        "title": "",
+                        "type": "danger",
+                        "message": $scope.errors["login_error_desc"]
+                    });
+                    $('[name=errContainer]').empty().append($compile(alert_dlg)($scope));
+                }
+            }
+
+        }
+        
+         $scope.newregclick=function(){				
+		 window.location.href = $scope.servers["GST_REGISTRATION_R1_URL"] + "/registration/";		 
+		
+	}
+
+    }
+
+  
+    
+    $scope.ckUploadJson=function(str){        
+       if(str =='yes') {
+        ajax.get("/services/check/uploadjson", {}, {}, function () {
+                    $().blockPage(true);
+                }, function () {
+                    $().blockPage(false);
+                }).then(function (response) {
+
+            if (response.successCode === "mobileapp") {
+                        $window.location.href ="/services/auth/uploadjson";
+                    } else if(response.successCode === "SWEB_2002"){                   
+                        $window.location.href ="/services/auth/restrictupload";
+                    }
+        });
+       } else {
+          $window.location.href = $scope.servers["GST_REGISTRATION_URL"] + "/registration/auth/business-details"; 
+       }
+    } ;
+     $scope.data = {};
+     $scope.validateRbaOtp = function (form) {
+        $scope.details = JSON.parse(shareData.loginDetails.message);
+
+
+        if (form.$valid && $scope.details.otpAuthSts) {
+
+            var api, rbaRequest, details;
+
+            switch (shareData.loginDetails.errorCode) {
+               
+            case 'RSK_1000':
+                rbaRequest = JSON.parse(shareData.loginDetails.message);
+                details = {
+
+                    otp: $scope.data.otp
+                };
+                rbaRequest.otpDetails = JSON.stringify(details);
+
+                api = "/validate/rba/otp";
+                break;
+
+
+            }
+
+            ajax.post("/services" + api, rbaRequest, {}, function () {
+                $().blockPage(true);
+            }, function () {
+                $().blockPage(false);
+            }).then(function (response) {
+                if (response.message === "true" || response.message === "auth") {
+                    window.location.href = "/services/auth/";
+
+                } else {
+                     var msg, alert_dlg="";
+                    var item={};
+                    item.link='/services/login';
+                    
+                    msg = "OTP is Incorrect. Click " +"<a href='"+item.link+"'>"+"here</a>"+ " to login again";
+                    $scope.errorMsg=$sce.trustAsHtml(msg);
+                    $('[name=errContainer]').empty().append($compile(alert_dlg)($scope));
+                }
+            }, function (err) {
+                $().blockPage(false);
+            });
+
+        } 
+    };
+    $scope.onLoadOtp = function () {
+        var OtpSts, msg, alert_dlg;
+        OtpSts = JSON.parse(shareData.loginDetails.message);
+        if (OtpSts.otpAuthSts) {
+            if(OtpSts.ruleMatched){
+                // msg = "One-Time Password (OTP) authentication is required as "+$scope.trans["RBA_"+OtpSts.ruleMatched] +". OTP has been generated and sent to your registered Email Address and Mobile Number";
+            	//RQM 25950 Enhanced RBA OTP TEMPLATE
+            	msg = "Dear User, Please enter the One-Time Password (OTP) sent to your registered Email Address and Mobile Number. This extra step is for your security because "+$scope.trans["RBA_"+OtpSts.ruleMatched];
+            }else{
+                msg = "One-Time Password (OTP) has been sent to your registered Email Address and Mobile Number";
+            }
+            
+            alert_dlg = utilFunctions.createAlert({
+                "title": "",
+                "type": "success",
+                "message": msg
+            });
+
+        } else {
+            msg = "Please try after some time";
+            alert_dlg = utilFunctions.createAlert({
+                "title": "",
+                "type": "danger",
+                "message": msg
+            });
+        }
+
+        $('[name=errContainer]').empty().append($compile(alert_dlg)($scope));
+
+
+    };
+	
+	$scope.newregclick=function(){				
+		 window.location.href = $scope.servers["GST_REGISTRATION_R1_URL"] + "/registration/";		 
+		
+	}
+
+
+}
+
+welcomeCtrl.$inject = ['$scope', 'cache', '$rootScope', 'shareData', '$location', 'ajax', '$route', '$window', '$timeout', '$templateCache', '$log', 'utilFunctions', 'validations', '$compile'];
+
+
+function welcomeCtrl($scope, cache, $rootScope, shareData, $location, ajax, $route, $window, $timeout, $templateCache, $log, utilFunctions, validations, $compile) {
+    /* init controller */
+   
+
+    utilFunctions.initCache();
+    $scope.servers = $().getServers();
+    $scope.trans = utilFunctions.initLanguage('services');
+    $rootScope.$on("LangChanged", function(event, mass) {
+        $scope.trans = utilFunctions.initLanguage('services');
+    });
+    $scope.$on('$viewContentLoaded', function() {
+        $window.scrollTo(0, 0);
+        angular.element(document.querySelector('[autofocus]')).focus();
+    });
+    /*init completed*/
+
+    $scope.getCData = function(item) {
+
+        if (cache.get(item).length > 0) {
+            $scope[item] = cache.get(item);
+        } else {
+            ajax.get($scope.resources[item]).then(function(response) {
+                $scope[item] = response.data;
+                cache.set(item, response.data);
+                delete $scope.errors[item];
+            }, function(err) {
+                $scope.errors[item] = err.msg;
+            });
+        }
+
+    };
+
+    if ($route.current) {
+        deps = $route.current.$$route.deps || [];
+        for (dep in deps) {
+            $scope[deps[dep]] = cache.get(deps[dep]) || [];
+            if ($scope[deps[dep]].length === 0) {
+                $scope.getCData(deps[dep]);
+            }
+        }
+    }
+   
+
+
+    
+        $scope.uploadWebJson=function() {
+        ajax.get("/services/verify/regstatus",{},{}, function () {
+           $().blockPage(true); 
+        }, function () {
+            $().blockPage(false);
+        }).then(function (response){
+            if(response.errorCode == 'SWEB_9021') {
+               // window.location.href = $scope.servers["GST_REGISTRATION_URL"] + "/registration/auth/business-details";
+            } else if(response.successCode == 'auth') {
+                $window.location.href = $scope.servers["GST_REGISTRATION_URL"] + "/registration/auth/business-details";
+            } else if(response.successCode == 'SWEB_2001') {
+              //  $window.location.href = $scope.servers["GST_REGISTRATION_URL"] + "/registration/auth/business-details";
+            } else if(response.successCode == 'upload') {
+                 $window.location.href ='/services/auth/regoptions';
+            } else if(response.successCode == 'SWEB_2002') {
+                $window.location.href ="/services/auth/restrictupload";
+            }  else if(response.successCode == 'mobileapp') {
+                 $window.location.href ="/services/auth/uploadjson";
+            }
+        });
+    }
+
+
+
+}
