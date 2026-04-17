@@ -115,7 +115,7 @@ text-align:center;
                 <li class="menuList" data-ng-class="{&#39;active&#39;: [&#39;dashboard&#39;,&#39;home&#39;].indexOf(servers.NAV_COMPONENT) &gt; -1, &#39;disabled&#39; :udata.disableMenu}" data-toggle="tooltip" data-placement="top" data-original-title="" title="">
                     <a data-ng-show="udata &amp;&amp; udata.role == &#39;login&#39;" data-ng-href="//services.gst.gov.in/services/auth/dashboard" target="_self" href="https://services.gst.gov.in/services/auth/dashboard" class="ng-hide">Dashboard</a>
                     <a data-ng-show="udata &amp;&amp; udata.role == &#39;panLogin&#39;" data-ng-href="//reg.gst.gov.in/registration/auth/dashboard" target="_self" href="https://reg.gst.gov.in/registration/auth/dashboard" class="ng-hide">Dashboard</a>
-                    <a class="nav_home" data-ng-show="!udata || udata.role == undefined" data-ng-href="//www.gst.gov.in/" target="_self" href="https://www.gst.gov.in/">Home</a>
+                    <a class="nav_home" data-ng-show="!udata || udata.role == undefined" data-ng-href="index.html" target="_self" href="index.html">Home</a>
                 </li>
                 <!-- CR#22679 Enabling changes -->
                 <li class="dropdown drpdwn menuList" data-ng-class="{&#39;active&#39;: servers.NAV_COMPONENT == &#39;services&#39;, &#39;disabled&#39; :udata.disableMenu &amp;&amp; !enableServices}">
@@ -757,7 +757,7 @@ text-align:center;
 <div class="mypage">
 <div class="row" data-ng-controller="transctrl" data-ng-init="init(&#39;services&#39;)">
 <div class="col-xs-10">
-<div data-breadcrumb="" data-path="//www.gst.gov.in/" data-name="Home"><ol class="breadcrumb" data-ng-controller="crumbCtrl"><li><a target="" href="https://www.gst.gov.in/" data-ng-bind="name">Home</a></li><!----><li data-ng-repeat="breadcrumb in breadcrumbs.getAll()"><ng-switch on="$last"> <!----> <!----><span ng-switch-default=""><a ng-attr-target="{{(breadcrumb.t === true) ? undefined : &#39;_self&#39;}}" href="https://services.gst.gov.in/services/quicklinks/searchtxp" data-ng-bind="breadcrumb.n" target="_self">Search Taxpayer</a></span><!----> </ng-switch></li><!----><li data-ng-repeat="breadcrumb in breadcrumbs.getAll()"><ng-switch on="$last"> <!----><span ng-switch-when="true">Search by GSTIN/UIN</span><!----> <!----> </ng-switch></li><!----></ol></div>
+<div data-breadcrumb="" data-path="index.html" data-name="Home"><ol class="breadcrumb" data-ng-controller="crumbCtrl"><li><a target="" href="index.html" data-ng-bind="name">Home</a></li><!----><li data-ng-repeat="breadcrumb in breadcrumbs.getAll()"><ng-switch on="$last"> <!----> <!----><span ng-switch-default=""><a ng-attr-target="{{(breadcrumb.t === true) ? undefined : &#39;_self&#39;}}" href="https://services.gst.gov.in/services/quicklinks/searchtxp" data-ng-bind="breadcrumb.n" target="_self">Search Taxpayer</a></span><!----> </ng-switch></li><!----><li data-ng-repeat="breadcrumb in breadcrumbs.getAll()"><ng-switch on="$last"> <!----><span ng-switch-when="true">Search by GSTIN/UIN</span><!----> <!----> </ng-switch></li><!----></ol></div>
 </div>
 </div>
 <div class="content-pane" style="min-height: 510.625px;">
